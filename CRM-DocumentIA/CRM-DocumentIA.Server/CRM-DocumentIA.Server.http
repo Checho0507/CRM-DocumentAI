@@ -1,0 +1,6 @@
+@CRM_DocumentIA.Server_HostAddress = http://localhost:5058
+
+GET {{CRM_DocumentIA.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
