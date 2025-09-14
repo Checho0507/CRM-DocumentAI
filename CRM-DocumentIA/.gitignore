@@ -1,0 +1,19 @@
+# Visual Studio
+.vs/
+
+# Archivos de compilación .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.log
+*.dbmdl
+
+# Node.js / Next.js
+node_modules/
+.next/
+out/
+
+# Configuración local
+*.env
