@@ -1,0 +1,32 @@
+{
+  "name": "document_ia",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+    "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint",
+    "create:pages": "node --loader ts-node/esm src/app/scripts/create_pages.ts"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
+    "next": "15.5.3",
+    "postcss": "^8.5.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "tailwindcss": "^4.1.13"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.3",
+    "fs-extra": "^11.3.1",
+    "typescript": "^5"
+  }
+}
