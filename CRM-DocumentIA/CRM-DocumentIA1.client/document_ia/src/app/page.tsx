@@ -33,7 +33,7 @@ export default function Home() {
           <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl mx-auto mb-4">
             <FaChartPie />
           </div>
-          <h3 className="text-xl font-semibold mb-2">Analítica Avanzada</h3>
+          <h3 className="text-xl font-semibold m-36">Analítica Avanzada</h3>
           <p className="text-gray-600">
             Obtén insights valiosos sobre tus clientes y el rendimiento de tus propuestas
           </p>
