@@ -1,1 +1,2 @@
 C:\Users\felipe\Desktop\CRM-DocumentAI\CRM-DocumentIA\crm-documentia.client\obj\Debug\crm-documentia.client.esproj.CoreCompileInputs.cache
+D:\OTHERS\Universidad\Proyecto Integrador\CRM-DocumentAI\CRM-DocumentIA\crm-documentia.client\obj\Debug\crm-documentia.client.esproj.CoreCompileInputs.cache

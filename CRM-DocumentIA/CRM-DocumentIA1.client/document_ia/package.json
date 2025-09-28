@@ -11,9 +11,11 @@
     "create:pages": "node --loader ts-node/esm src/app/scripts/create_pages.ts"
   },
   "dependencies": {
+    "@prisma/client": "^6.16.2",
     "@tailwindcss/postcss": "^4.1.13",
     "chart.js": "^4.5.0",
     "next": "15.5.3",
+    "next-auth": "^4.24.11",
     "react": "19.1.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "19.1.0",
@@ -30,6 +32,7 @@
     "eslint-config-next": "15.5.3",
     "fs-extra": "^11.3.1",
     "postcss": "^8.5.6",
+    "prisma": "^6.16.2",
     "tailwindcss": "^4.1.13",
     "typescript": "^5"
   }

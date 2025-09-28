@@ -26,4 +26,10 @@
     </ProjectReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Application\DTOs\" />
+    <Folder Include="Application\Services\" />
+    <Folder Include="Infrastructure\" />
+  </ItemGroup>
+
 </Project>

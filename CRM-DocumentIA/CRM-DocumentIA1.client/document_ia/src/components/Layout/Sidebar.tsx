@@ -41,11 +41,10 @@ const Sidebar: FC = () => {
           <li key={label}>
             <Link
               href={href}
-              className={`flex items-center gap-3 px-4 py-2 rounded-md transition ${
-                pathname === href
+              className={`flex items-center gap-3 px-4 py-2 rounded-md transition ${pathname === href
                   ? "bg-white/20 border-l-4 border-white"
                   : "hover:bg-white/10"
-              }`}
+                }`}
             >
               {icon}
               <span>{label}</span>

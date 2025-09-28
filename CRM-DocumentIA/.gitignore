@@ -17,3 +17,4 @@ out/
 
 # Configuración local
 *.env
+*.env.local

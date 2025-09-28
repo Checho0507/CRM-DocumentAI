@@ -15,11 +15,13 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { useSession } from 'next-auth/react';
 
 // Registrar módulos
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
 
 export default function DashboardPage() {
+  const { data: session, status } = useSession();
   // Datos de ejemplo
   const documentsByMonth = {
     labels: ["Abr", "May", "Jun", "Jul", "Ago", "Sep"],
@@ -41,6 +43,15 @@ export default function DashboardPage() {
       },
     ],
   };
+
+
+  if (status === 'loading') {
+    return <p className="p-6">Cargando sesión...</p>;
+  }
+
+  if (!session) {
+    return <p className="p-6">No estás autenticado.</p>;
+  }
 
   return (
     <Layout>
