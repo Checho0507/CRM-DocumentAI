@@ -17,6 +17,8 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         try {
+          console.log("🔐 Attempting credentials login:", credentials?.email);
+          
           const res = await fetch(API_ROUTES.LOGIN, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -27,14 +29,15 @@ const handler = NextAuth({
           });
 
           if (!res.ok) {
-            console.error("Login failed:", res.status, res.statusText);
+            console.error("❌ Login failed:", res.status, await res.text());
             return null;
           }
           
           const user = await res.json();
+          console.log("✅ Login successful:", user.email);
           return user;
         } catch (error) {
-          console.error("Authorize error:", error);
+          console.error("🚨 Authorize error:", error);
           return null;
         }
       },
@@ -42,47 +45,48 @@ const handler = NextAuth({
   ],
 
   callbacks: {
-    async signIn({ user, account }) {
-      console.log("🔐 SignIn callback triggered:", { 
+    async signIn({ user, account, profile }) {
+      console.log("🔐 SignIn callback:", { 
         email: user?.email, 
         provider: account?.provider 
       });
 
-      // Si es Google OAuth
       if (account?.provider === "google") {
         try {
-          console.log("🔍 Checking user in database...");
+          console.log("🔍 Checking Google user in database...");
+          
           const res = await fetch(API_ROUTES.CHECK_USER, {
             method: "POST",
-            headers: {
+            headers: { 
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
+            body: JSON.stringify({ 
               email: user.email,
               name: user.name,
+              image: user.image 
             }),
           });
 
-          console.log("📊 Check user response status:", res.status);
+          console.log("📊 Check user status:", res.status);
 
           if (!res.ok) {
-            // Si el usuario no existe, redirigir a registro
             console.log("❌ User not found, redirecting to register");
-            return "/register?error=UserNotFound";
+            // IMPORTANTE: Retornar string para redirección
+            return `/register?email=${encodeURIComponent(user.email || '')}&name=${encodeURIComponent(user.name || '')}`;
           }
 
           const userData = await res.json();
           console.log("✅ User found:", userData);
-          // Asignar los datos del usuario para usar en JWT
+          
+          // Asignar datos del usuario
           user.id = userData.id;
           user.role = userData.role;
           user.token = userData.token;
 
           return true;
         } catch (error) {
-          console.error("❌ Error in signIn callback:", error);
-          // En caso de error, redirigir a registro
-          return "/register?error=ConnectionError";
+          console.error("🚨 Error in Google signIn:", error);
+          return `/register?error=auth_failed&email=${encodeURIComponent(user.email || '')}`;
         }
       }
 
@@ -90,12 +94,7 @@ const handler = NextAuth({
     },
 
     async jwt({ token, user, account }) {
-      console.log("🔑 JWT callback:", {
-        userEmail: user?.email,
-        tokenEmail: token.email
-      });
-
-      // Primer login - user está disponible
+      // Primer login
       if (user) {
         token.id = String(user.id);
         token.email = user.email;
@@ -107,43 +106,52 @@ const handler = NextAuth({
     },
 
     async session({ session, token }) {
-      console.log("💼 Session callback:", { 
-        sessionEmail: session.user.email,
-        tokenEmail: token.email 
-      });
-
-      session.user = {
-        id: token.id as string,
-        email: token.email as string,
-        role: token.role as string,
-        name: token.name as string,
-        image: token.picture as string,
-      };
-      session.accessToken = token.accessToken as string;
+      if (token) {
+        session.user = {
+          id: token.id as string,
+          email: token.email as string,
+          role: token.role as string,
+          name: token.name as string,
+          image: token.picture as string,
+        };
+        session.accessToken = token.accessToken as string;
+      }
       
       return session;
     },
 
     async redirect({ url, baseUrl }) {
-      console.log("🔄 Redirect callback:", { url, baseUrl });
+      console.log("🔄 Redirect from:", url, "to base:", baseUrl);
       
-      // Si hay un error, redirigir a la página de error
+      // Si es una URL de error, redirigir a login
       if (url.includes('/api/auth/error')) {
-        return `${baseUrl}/login?error=AuthenticationFailed`;
+        return `${baseUrl}/login?error=auth_failed`;
       }
       
-      // Si es una URL relativa, usar baseUrl
-      if (url.startsWith('/')) return `${baseUrl}${url}`;
-      // Si es una URL del mismo origen, permitirla
-      else if (new URL(url).origin === baseUrl) return url;
+      // Si es una URL de registro, permitirla
+      if (url.includes('/register')) {
+        return url.startsWith('/') ? `${baseUrl}${url}` : url;
+      }
       
-      return baseUrl;
+      // Redirigir a dashboard por defecto
+      if (url === `${baseUrl}/api/auth/signin` || url === `${baseUrl}/login`) {
+        return `${baseUrl}/dashboard`;
+      }
+      
+      return url.startsWith('/') ? `${baseUrl}${url}` : url;
     },
   },
 
   pages: {
     signIn: "/login",
-    error: "/auth/error", // Asegúrate de tener esta página
+    signOut: "/login",
+    error: "/auth/error",
+    newUser: "/register"
+  },
+
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 días
   },
 
   debug: process.env.NODE_ENV === "development",

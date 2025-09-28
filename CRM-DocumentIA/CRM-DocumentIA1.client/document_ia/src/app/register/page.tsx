@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import { API_ROUTES } from "@/lib/apiRoutes";
 
 export default function Register() {
@@ -25,8 +26,8 @@ export default function Register() {
       setError('No se pudo registrar el usuario.');
       return;
     }
-
-    router.push('/login');
+    router.push('/login' as Route);
+    //router.push('/login');
   };
 
   return (
