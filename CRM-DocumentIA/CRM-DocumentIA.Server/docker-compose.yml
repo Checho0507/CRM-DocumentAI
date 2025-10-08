@@ -1,0 +1,10 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: crm_documentia_db
+    environment:
+      MSSQL_SA_PASSWORD: "Passwordd1"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1434:1433"
+    restart: unless-stopped
