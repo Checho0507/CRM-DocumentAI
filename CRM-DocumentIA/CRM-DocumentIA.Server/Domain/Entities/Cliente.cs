@@ -1,8 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using CRM_DocumentIA.Server.Models;
 
-namespace CRM_DocumentIA.server.Models;
+namespace CRM_DocumentIA.Server.Domain.Entities;
 
 public class Cliente
 {
@@ -27,4 +26,7 @@ public class Cliente
 
     // Relación con Documentos (uno a muchos)
     public virtual ICollection<Documento> Documentos { get; set; } = new List<Documento>();
+
+    // **NUEVA PROPIEDAD DE NAVEGACIÓN:** Relación 1:N con Insights
+    public ICollection<Insight> Insights { get; set; } = new List<Insight>();
 }

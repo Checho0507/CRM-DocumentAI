@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace CRM_DocumentIA.Server.Models;
+namespace CRM_DocumentIA.Server.Domain.Entities;
 
 
 public class ProcesoIA

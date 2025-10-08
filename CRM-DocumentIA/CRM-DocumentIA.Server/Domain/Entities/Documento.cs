@@ -1,8 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using CRM_DocumentIA.server.Models;
 
-namespace CRM_DocumentIA.Server.Models;
+namespace CRM_DocumentIA.Server.Domain.Entities;
 
 public class Documento
 {
@@ -33,4 +32,7 @@ public class Documento
 
     // Relación con ProcesosAI (uno a muchos)
     public virtual ICollection<ProcesoIA> ProcesosIA { get; set; } = new List<ProcesoIA>();
+
+    // **NUEVA PROPIEDAD DE NAVEGACIÓN:** Relación 1:N con Insights
+    public ICollection<Insight> Insights { get; set; } = new List<Insight>();
 }
