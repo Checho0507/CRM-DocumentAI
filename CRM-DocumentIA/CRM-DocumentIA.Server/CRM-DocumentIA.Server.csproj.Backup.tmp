@@ -14,7 +14,6 @@
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-    <PackageReference Include="MailKit" Version="4.14.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy">
       <Version>8.*-*</Version>
@@ -36,9 +35,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Application\DTOs\" />
-    <Folder Include="Application\Services\" />
-    <Folder Include="Domain\Entities\" />
     <Folder Include="Domain\ValueObjects\" />
     <Folder Include="Infrastructure\Database\" />
     <Folder Include="Infrastructure\External\" />

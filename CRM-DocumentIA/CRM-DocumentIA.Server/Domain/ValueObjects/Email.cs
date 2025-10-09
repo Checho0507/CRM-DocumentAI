@@ -7,7 +7,7 @@ namespace CRM_DocumentIA.Domain.ValueObjects
     // Record se usa para ValueObjects por su inmutabilidad y comparación automática
     public record Email
     {
-        public string Valor { get; }
+        public string Valor { get; private set; }
 
         // Patrón básico para validar formato de correo
         private static readonly Regex EmailRegex = new Regex(

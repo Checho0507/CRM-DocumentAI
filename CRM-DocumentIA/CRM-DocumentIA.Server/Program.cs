@@ -1,19 +1,49 @@
-using System.Text;
+﻿using System.Text;
 using CRM_DocumentIA.Application.Services;
 using CRM_DocumentIA.Infrastructure.Repositories;
 using CRM_DocumentIA.Server.Application.Services;
+using CRM_DocumentIA.Server.Domain.Entities;
 using CRM_DocumentIA.Server.Domain.Interfaces;
 using CRM_DocumentIA.Server.Infrastructure.Database;
 using CRM_DocumentIA.Server.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Conexi�n a SQL Server
+// 1. Configurar política de CORS
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:3000") // 👈 tu frontend
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials(); // opcional si usas cookies o auth
+        });
+});
+
+builder.Services.AddSingleton<SmtpEmailService, SmtpEmailService>();
+
+builder.Services.AddScoped<TwoFactorService, TwoFactorService>();
+
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddTransient<SmtpEmailService, SmtpEmailService>();
+
+
+
+// Conexión a SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+
+    // ⚠️ Muestra los valores de los parámetros en la consola
+    options.EnableSensitiveDataLogging();
+});
 
 // Repositorios
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
@@ -30,7 +60,7 @@ builder.Services.AddScoped<ProcesoIAService>();
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<InsightService>();
 builder.Services.AddScoped<JWTService>();
-// 2. Configuraci�n de JWT Bearer (CRUCIAL)
+// 2. Configuración de JWT Bearer (CRUCIAL)
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -48,7 +78,7 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
 
-        // Par�metros a validar
+        // Parámetros a validar
         ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
         ValidAudience = builder.Configuration["JwtSettings:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
@@ -64,6 +94,8 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// 2. Usar la política de CORS antes del routing
+app.UseCors(MyAllowSpecificOrigins);
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
