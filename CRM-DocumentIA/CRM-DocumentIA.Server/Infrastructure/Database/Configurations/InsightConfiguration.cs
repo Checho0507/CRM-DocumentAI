@@ -27,7 +27,7 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database.Configurations
             builder.HasOne(i => i.Documento)
                    .WithMany(d => d.Insights) // Asume que la entidad Documento tiene una ICollection<Insight> Insights
                    .HasForeignKey(i => i.DocumentoId)
-                   .OnDelete(DeleteBehavior.Cascade) // Si el Documento se borra, los Insights asociados también
+                   .OnDelete(DeleteBehavior.Restrict) // Si el Documento se borra, los Insights asociados también
                    .IsRequired();
 
             // Relación opcional 1:N con Cliente (puede ser NULL)

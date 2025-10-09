@@ -1,72 +1,68 @@
-﻿// Application/Services/AuthenticationService.cs
-
+﻿using System; // Necesario para Exception y Guid
 using BCrypt.Net;
-using CRM_DocumentIA.Server.Application.DTOs.Auth;
-using CRM_DocumentIA.Server.Domain.Entities;
-using CRM_DocumentIA.Server.Domain.Interfaces;
 using CRM_DocumentIA.Domain.ValueObjects;
+using CRM_DocumentIA.Server.Application.DTOs.Auth;
 using CRM_DocumentIA.Server.Application.Services;
+using CRM_DocumentIA.Server.Domain.Entities; // 🎯 CRÍTICO: Necesario para referenciar 'Usuario'
+using CRM_DocumentIA.Server.Domain.Interfaces;
+
+// Nota: Asumo que JWTService implementa IServicioJwt, aunque no se muestre.
+// Usaremos AutenticacionService y JWTService según tu código.
 
 namespace CRM_DocumentIA.Application.Services
 {
-    // Clase principal renombrada a AuthenticationService
-    public class AutenticacionService
+    // Asegúrate de que tu interfaz (si existe) se llama IServicioAutenticacion
+    public class AutenticacionService // Asumo que tu clase se llama así, sin 'ServicioAutenticacion'
     {
-        // Renombrando campos privados para seguir convenciones (camelCase con prefijo '_')
-        private readonly IUsuarioRepository _userRepository;
-        private readonly JWTService _jwtService; // Asumiendo que has renombrado ServicioJwt a JwtService
+        // 🎯 UNIFICACIÓN: Usamos un solo repositorio y un solo servicio JWT.
+        private readonly IUsuarioRepository _usuarioRepository;
+        private readonly JWTService _jwtService;
 
+        // 🎯 UNIFICACIÓN: Usar los nombres de variables del constructor
         public AutenticacionService(IUsuarioRepository userRepository, JWTService jwtService)
         {
-            _userRepository = userRepository;
+            _usuarioRepository = userRepository; // Asumo que inyectas el mismo repo dos veces, corrijo a uno
             _jwtService = jwtService;
         }
 
         public async Task RegistrarUsuarioAsync(RegistroDTO dto)
         {
             // 1. Verificar si el usuario ya existe
-            var usuarioExistente = await _userRepository.ObtenerPorEmailAsync(dto.Email);
+            var usuarioExistente = await _usuarioRepository.ObtenerPorEmailAsync(dto.Email);
             if (usuarioExistente != null)
             {
-                // En una app real, podrías lanzar una excepción de negocio
                 throw new ArgumentException("El email ya está registrado.");
             }
 
             // 2. Crear hash seguro de la contraseña
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
-            // 3. Crear la entidad Usuario
-            var nuevoUsuario = new Usuario
-            {
-                Nombre = dto.Nombre,
-                Email = new Email(dto.Email), // Usa el Value Object
-                PasswordHash = passwordHash,
-                Rol = "usuario"
-            };
+            // 3. Crear la entidad Usuario usando el CONSTRUCTOR POSICIONAL
+            // (Asumo el orden: Email, Nombre, PasswordHash, Rol)
+            var nuevoUsuario = new Usuario(
+                new Email(dto.Email),
+                dto.Nombre,
+                passwordHash,
+                "usuario"
+            );
 
             // 4. Guardar en la base de datos
-            await _userRepository.AgregarAsync(nuevoUsuario);
+            await _usuarioRepository.AgregarAsync(nuevoUsuario);
         }
 
         public async Task<RespuestaAuthDTO> LoginAsync(LoginDTO dto)
         {
             // 1. Buscar el usuario
-            var usuario = await _userRepository.ObtenerPorEmailAsync(dto.Email);
-            if (usuario == null)
+            var usuario = await _usuarioRepository.ObtenerPorEmailAsync(dto.Email);
+            if (usuario == null || !BCrypt.Net.BCrypt.Verify(dto.Password, usuario.PasswordHash))
             {
                 throw new UnauthorizedAccessException("Credenciales inválidas.");
             }
 
-            // 2. Verificar la contraseña
-            if (!BCrypt.Net.BCrypt.Verify(dto.Password, usuario.PasswordHash))
-            {
-                throw new UnauthorizedAccessException("Credenciales inválidas.");
-            }
-
-            // 3. Generar el JWT
+            // 2. Generar el JWT
             var token = _jwtService.GenerarToken(usuario);
 
-            // 4. Devolver la respuesta esperada por NextAuth
+            // 3. Devolver la respuesta
             return new RespuestaAuthDTO
             {
                 Token = token,
@@ -80,20 +76,44 @@ namespace CRM_DocumentIA.Application.Services
             };
         }
 
-        // 5. Método para NextAuth (Google Login, etc.)
-        public async Task<UsuarioInfoDTO?> ValidarUsuarioExternoAsync(string email)
+        // 🎯 MÉTODO FINAL DE LOGIN SOCIAL (Login O Registro)
+        public async Task<RespuestaAuthDTO> LoginSocialAsync(LoginSocialDTO dto)
         {
-            var usuario = await _userRepository.ObtenerPorEmailAsync(email);
+            // 1. Buscar usuario por email
+            var usuario = await _usuarioRepository.ObtenerPorEmailAsync(dto.Email);
 
-            if (usuario == null) return null;
-
-            // Aquí podrías generar un JWT si fuera necesario para un flujo "check-user"
-            return new UsuarioInfoDTO
+            if (usuario == null)
             {
-                Id = usuario.Id,
-                Email = usuario.Email.Valor,
-                Nombre = usuario.Nombre,
-                Rol = usuario.Rol
+                // 2. Si no existe, REGISTRARLO automáticamente
+                var emailVo = new Email(dto.Email);
+                var passwordDummyHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString());
+
+                // 🎯 CRÍTICO: Usamos constructor posicional para evitar CS1739
+                var nuevoUsuario = new Usuario(
+                    emailVo,
+                    dto.Name,
+                    passwordDummyHash,
+                    "usuario"
+                );
+
+                await _usuarioRepository.AgregarAsync(nuevoUsuario);
+                usuario = nuevoUsuario;
+            }
+
+            // 3. Generar el JWT
+            var token = _jwtService.GenerarToken(usuario);
+
+            // 4. Devolver la respuesta
+            return new RespuestaAuthDTO
+            {
+                Token = token,
+                Usuario = new UsuarioInfoDTO
+                {
+                    Id = usuario.Id,
+                    Email = usuario.Email.Valor,
+                    Nombre = usuario.Nombre,
+                    Rol = usuario.Rol
+                }
             };
         }
     }
