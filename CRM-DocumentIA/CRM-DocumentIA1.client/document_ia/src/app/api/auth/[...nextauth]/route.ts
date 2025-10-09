@@ -1,3 +1,5 @@
+// /pages/api/auth/[...nextauth].ts (FINAL Y CORREGIDO)
+
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -17,8 +19,7 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         try {
-          console.log("🔐 Attempting credentials login:", credentials?.email);
-          
+          // 1. Lógica de Credenciales: Perfecta, ya mapea el JWT al objeto 'user'
           const res = await fetch(API_ROUTES.LOGIN, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -33,8 +34,18 @@ const handler = NextAuth({
             return null;
           }
           
-          const user = await res.json();
-          console.log("✅ Login successful:", user.email);
+          const data = await res.json(); 
+          console.log("✅ Login successful:", data.usuario.email);
+
+          // 2. Retorna el objeto 'user' simple con el JWT adjunto
+          const user = {
+            id: String(data.usuario.id),
+            email: data.usuario.email,
+            name: data.usuario.nombre,
+            role: data.usuario.rol,
+            token: data.token, // 🎯 PROPIEDAD CLAVE
+          };
+
           return user;
         } catch (error) {
           console.error("🚨 Authorize error:", error);
@@ -45,66 +56,69 @@ const handler = NextAuth({
   ],
 
   callbacks: {
-    async signIn({ user, account, profile }) {
-      console.log("🔐 SignIn callback:", { 
-        email: user?.email, 
-        provider: account?.provider 
+    async signIn({ user, account }) {
+      console.log("🔐 SignIn callback:", {
+        email: user?.email,
+        provider: account?.provider,
       });
 
+      // 🎯 NUEVO FLUJO DE LOGIN SOCIAL (GOOGLE)
       if (account?.provider === "google") {
         try {
-          console.log("🔍 Checking Google user in database...");
-          
-          const res = await fetch(API_ROUTES.CHECK_USER, {
+          console.log("🔍 Calling Social Login endpoint...");
+
+          // 1. Llama al endpoint único que gestiona Login O Registro en el backend
+          const res = await fetch(API_ROUTES.SOCIAL_LOGIN, {
             method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ 
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
               email: user.email,
-              name: user.name,
-              image: user.image 
+              name: user.name, // Solo se necesita email y name
             }),
           });
 
-          console.log("📊 Check user status:", res.status);
-
+          // Si el backend no devuelve 200 OK, es un error fatal (ej. DB caída)
           if (!res.ok) {
-            console.log("❌ User not found, redirecting to register");
-            // IMPORTANTE: Retornar string para redirección
-            return `/register?email=${encodeURIComponent(user.email || '')}&name=${encodeURIComponent(user.name || '')}`;
+            console.error("❌ Social Login failed:", res.status, await res.text());
+            return false; 
           }
 
-          const userData = await res.json();
-          console.log("✅ User found:", userData);
-          
-          // Asignar datos del usuario
-          user.id = userData.id;
-          user.role = userData.role;
-          user.token = userData.token;
+          // 2. Respuesta: { token, usuario: { id, email, ... } }
+          const data = await res.json();
+          console.log("✅ Social Login/Register successful:", data.usuario.email);
 
-          return true;
+          // 3. Modificamos el objeto 'user' de NextAuth para adjuntar la info y el JWT
+          // (Es necesario usar 'as any' porque 'user' viene tipado solo con las propiedades básicas)
+          user.id = String(data.usuario.id);
+          user.role = data.usuario.rol;
+          user.name = data.usuario.nombre;
+          user.token = data.token; // 🎯 Adjuntamos el JWT
+
+          return true; // Permite el inicio de sesión
+
         } catch (error) {
           console.error("🚨 Error in Google signIn:", error);
-          return `/register?error=auth_failed&email=${encodeURIComponent(user.email || '')}`;
+          return false;
         }
       }
 
+      // Para Credenciales, el 'authorize' ya devolvió el usuario con el token, así que:
       return true;
     },
 
+    // 🎯 Callback JWT: Almacena el token del backend en el token de la sesión
     async jwt({ token, user, account }) {
-      // Primer login
       if (user) {
         token.id = String(user.id);
         token.email = user.email;
         token.role = user.role;
+        // La propiedad 'token' viene de Credentials o fue adjuntada en signIn (Google)
         token.accessToken = user.token || account?.access_token;
       }
-      
       return token;
     },
 
+    // 🎯 Callback Session: Expone el token para que la app lo use en headers
     async session({ session, token }) {
       if (token) {
         session.user = {
@@ -116,29 +130,21 @@ const handler = NextAuth({
         };
         session.accessToken = token.accessToken as string;
       }
-      
       return session;
     },
 
+    // ... (El callback redirect y el resto de la configuración se mantienen) ...
     async redirect({ url, baseUrl }) {
-      console.log("🔄 Redirect from:", url, "to base:", baseUrl);
-      
-      // Si es una URL de error, redirigir a login
-      if (url.includes('/api/auth/error')) {
-        return `${baseUrl}/login?error=auth_failed`;
-      }
-      
-      // Si es una URL de registro, permitirla
-      if (url.includes('/register')) {
-        return url.startsWith('/') ? `${baseUrl}${url}` : url;
-      }
-      
-      // Redirigir a dashboard por defecto
-      if (url === `${baseUrl}/api/auth/signin` || url === `${baseUrl}/login`) {
-        return `${baseUrl}/dashboard`;
-      }
-      
-      return url.startsWith('/') ? `${baseUrl}${url}` : url;
+        if (url.includes("/api/auth/error")) {
+            return `${baseUrl}/login?error=auth_failed`;
+        }
+        if (url.includes("/register")) {
+            return url.startsWith("/") ? `${baseUrl}${url}` : url;
+        }
+        if (url === `${baseUrl}/api/auth/signin` || url === `${baseUrl}/login`) {
+            return `${baseUrl}/dashboard`;
+        }
+        return url.startsWith("/") ? `${baseUrl}${url}` : url;
     },
   },
 
@@ -146,7 +152,7 @@ const handler = NextAuth({
     signIn: "/login",
     signOut: "/login",
     error: "/auth/error",
-    newUser: "/register"
+    newUser: "/register",
   },
 
   session: {
