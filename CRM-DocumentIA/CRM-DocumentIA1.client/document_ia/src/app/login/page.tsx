@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 
 export default function Login() {
@@ -29,7 +28,7 @@ export default function Login() {
       } else {
         router.push('/dashboard');
       }
-    } catch (error) {
+    } catch {
       setError('Error al iniciar sesión');
     } finally {
       setIsLoading(false);
@@ -41,7 +40,7 @@ export default function Login() {
       await signIn('google', {
         callbackUrl: '/dashboard'
       });
-    } catch (error) {
+    } catch {
       setError('Error al iniciar sesión con Google');
     }
   };
@@ -96,12 +95,6 @@ export default function Login() {
           </button>
         </div>
 
-        <p className="mt-4 text-center text-sm">
-          ¿No tienes cuenta?{' '}
-          <Link href="/register" className="text-blue-600 font-medium">
-            Regístrate aquí
-          </Link>
-        </p>
       </div>
     </div>
   );

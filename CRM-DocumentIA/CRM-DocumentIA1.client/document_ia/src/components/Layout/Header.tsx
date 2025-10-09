@@ -7,6 +7,10 @@ import Link from "next/link";
 export default function Header() {
   const { data: session } = useSession();
 
+  // 🎯 Lógica para obtener el nombre en mayúsculas
+  const userName = session?.user?.name || '';
+  const displayUserName = userName.toUpperCase();
+
   return (
     <header className="flex justify-between items-center bg-white p-4 rounded-xl shadow mb-6">
       {/* Barra de búsqueda */}
@@ -26,12 +30,14 @@ export default function Header() {
         {session ? (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-              {session.user?.name?.charAt(0)}
+              {/* Inicial en mayúsculas */}
+              {displayUserName.charAt(0)}
             </div>
-            <span>{session.user?.name}</span>
+            {/* 🎯 Mostrar Nombre Completo en Mayúsculas */}
+            <span className="font-semibold text-gray-700">{displayUserName}</span>
             <button
               onClick={() => signOut()}
-              className="ml-4 px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
+              className="ml-4 px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-150"
             >
               Cerrar Sesión
             </button>
@@ -40,13 +46,13 @@ export default function Header() {
           <div className="flex gap-2">
             <button
               onClick={() => signIn()}
-              className="px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              className="px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-150"
             >
               Iniciar Sesión
             </button>
             <Link
               href="/register"
-              className="px-3 py-1 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600"
+              className="px-3 py-1 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-150"
             >
               Registrarse
             </Link>

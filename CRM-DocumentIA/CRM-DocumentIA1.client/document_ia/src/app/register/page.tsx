@@ -1,77 +1,92 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import type { Route } from 'next';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { API_ROUTES } from "@/lib/apiRoutes";
 
-export default function Register() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+export default function RegisterPage() {
   const router = useRouter();
+  const [formData, setFormData] = useState({ nombre: "", email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    console.log("Envio registrer", JSON.stringify({ name, email, password }))
-    const res = await fetch(API_ROUTES.REGISTER, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
-    });
+    setLoading(true);
+    setError("");
 
-    if (!res.ok) {
-      setError('No se pudo registrar el usuario.');
-      return;
+    try {
+      const res = await fetch(API_ROUTES.REGISTER, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("❌ Error en registro:", errorText);
+        setError("No se pudo registrar el usuario.");
+        return;
+      }
+
+      alert("✅ Registro exitoso");
+      router.push("/Dashboard");
+    } catch (error) {
+      console.error(error);
+      setError("❌ Error al conectar con el servidor.");
+    } finally {
+      setLoading(false);
     }
-    router.push('/login' as Route);
-    //router.push('/login');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-500 to-green-700">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-center mb-6">Registro</h2>
+    <div className="flex min-h-screen justify-center items-center bg-gray-100">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-8 rounded-xl shadow-md w-full max-w-sm space-y-4"
+      >
+        <h1 className="text-2xl font-bold text-center mb-4">Registro</h1>
 
-        {error && (
-          <div className="mb-4 bg-red-100 text-red-700 px-4 py-2 rounded">{error}</div>
-        )}
+        {error && <p className="text-red-500 text-center">{error}</p>}
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Nombre completo"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full border px-4 py-3 rounded-xl"
-            required
-          />
-          <input
-            type="email"
-            placeholder="Correo electrónico"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border px-4 py-3 rounded-xl"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border px-4 py-3 rounded-xl"
-            required
-          />
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700"
-          >
-            Registrarse
-          </button>
-        </form>
-      </div>
+        <input
+          type="text"
+          name="nombre"
+          placeholder="Nombre"
+          onChange={handleChange}
+          className="w-full border px-4 py-2 rounded"
+          required
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="Correo"
+          onChange={handleChange}
+          className="w-full border px-4 py-2 rounded"
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Contraseña"
+          onChange={handleChange}
+          className="w-full border px-4 py-2 rounded"
+          required
+        />
+
+        <button
+          type="submit"
+          disabled={loading}
+          className={`w-full py-2 text-white rounded ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+            }`}
+        >
+          {loading ? "Registrando..." : "Registrar"}
+        </button>
+      </form>
     </div>
   );
 }
