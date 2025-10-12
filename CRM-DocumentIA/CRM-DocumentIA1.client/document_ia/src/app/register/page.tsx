@@ -2,16 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { Route } from "next";
 import { API_ROUTES } from "@/lib/apiRoutes";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({ nombre: "", email: "", password: "" });
+  const [formData, setFormData] = useState({
+    nombre: "",
+    email: "",
+    password: "",
+    dobleFactorActivado: false,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,9 +42,8 @@ export default function RegisterPage() {
         setError("No se pudo registrar el usuario.");
         return;
       }
-
       alert("✅ Registro exitoso");
-      router.push("/Dashboard");
+      router.push("/login" as Route);
     } catch (error) {
       console.error(error);
       setError("❌ Error al conectar con el servidor.");
@@ -77,6 +86,19 @@ export default function RegisterPage() {
           className="w-full border px-4 py-2 rounded"
           required
         />
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="dobleFactorActivado"
+            checked={formData.dobleFactorActivado}
+            onChange={handleChange}
+            className="h-4 w-4"
+          />
+          <label htmlFor="twoFactorEnabled" className="text-sm text-gray-700">
+            Activar verificación en dos pasos
+          </label>
+        </div>
 
         <button
           type="submit"

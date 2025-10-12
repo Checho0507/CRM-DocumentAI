@@ -16,5 +16,6 @@ namespace CRM_DocumentIA.Server.Application.DTOs.Usuario
     public class ActualizacionUsuarioDTO
     {
         public string Nombre { get; set; } = string.Empty;
+        public bool? DobleFactorActivado { get; set; } // 👈 opcional
     }
 }

@@ -29,6 +29,9 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddSingleton<SmtpEmailService, SmtpEmailService>();
 
+builder.Services.AddScoped<JWTService>();
+
+
 builder.Services.AddScoped<TwoFactorService, TwoFactorService>();
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));

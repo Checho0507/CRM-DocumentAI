@@ -15,5 +15,6 @@
     {
         public string Token { get; set; } = string.Empty; // El JWT
         public UsuarioInfoDTO Usuario { get; set; } = null!; // Los datos del usuario
+        public bool DobleFactorActivado { get; internal set; }
     }
 }
