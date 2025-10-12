@@ -1,23 +1,36 @@
-﻿// Controllers/AuthController.cs
-
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using CRM_DocumentIA.Application.Services;
+using CRM_DocumentIA.Infrastructure.Repositories;
 using CRM_DocumentIA.Server.Application.DTOs._2FA;
 using CRM_DocumentIA.Server.Application.DTOs.Auth;
 using CRM_DocumentIA.Server.Application.Services;
+using CRM_DocumentIA.Server.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CRM_DocumentIA.Server.Controllers
 {
     [ApiController]
-    [Route("api/auth")] // La ruta base que espera NextAuth
+    [Route("api/auth")]
     public class AuthController : ControllerBase
     {
-        private readonly AutenticacionService _servicioAuth;
 
-        public AuthController(AutenticacionService servicioAuth)
+        private readonly AutenticacionService _servicioAuth;
+        private readonly SmtpEmailService _smtpEmailService;
+        private readonly IUsuarioRepository _usuarioRepository;
+        private readonly JWTService _jwtService;
+        private static readonly ConcurrentDictionary<string, TwoFaEntry> _twoFaStore = new();
+
+        public AuthController(
+            AutenticacionService servicioAuth,
+            SmtpEmailService smtpEmailService,
+            JWTService jwtService,
+            IUsuarioRepository usuarioRepository
+        )
         {
             _servicioAuth = servicioAuth;
+            _smtpEmailService = smtpEmailService;
+            _usuarioRepository = usuarioRepository;
+            _jwtService = jwtService;
         }
 
         [HttpPost("register")]
@@ -43,8 +56,9 @@ namespace CRM_DocumentIA.Server.Controllers
         }
 
         [HttpPost("login")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RespuestaAuthDTO))]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+
         public async Task<IActionResult> Login([FromBody] LoginDTO dto)
         {
             try
@@ -62,6 +76,21 @@ namespace CRM_DocumentIA.Server.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new { success = false, message = "Error interno al iniciar sesión." });
             }
         }
+        // 🎯 ENDPOINT: Login Social (Llamado 'SOCIAL_LOGIN' en el frontend)
+        [HttpPost("social-login")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RespuestaAuthDTO))]
+        public async Task<IActionResult> SocialLogin([FromBody] LoginSocialDTO dto)
+        {
+            try
+            {
+                var respuesta = await _servicioAuth.LoginSocialAsync(dto);
+                return Ok(respuesta);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { success = false, message = $"Error en el login social: {ex.Message}" });
+            }
+        }
 
         private class TwoFaEntry
         {
@@ -70,30 +99,15 @@ namespace CRM_DocumentIA.Server.Controllers
             public int Attempts { get; set; }
         }
 
-        // Esto vive en memoria mientras corre la app:
-        private static readonly ConcurrentDictionary<string, TwoFaEntry> _twoFaStore = new();
-
-        private readonly SmtpEmailService _smtpEmailService;
-
-        // Ajusta si tu constructor ya existe: añade SmtpEmailService como parámetro e asigna
-        public AuthController(SmtpEmailService smtpEmailService /*, otros services... */)
-        {
-            _smtpEmailService = smtpEmailService;
-            // asignar otros services si ya los tienes...
-        }
-
-        // POST: api/auth/send-2fa-code
         [HttpPost("send-2fa-code")]
         public async Task<IActionResult> Send2FaCode([FromBody] Envio2FADTO dto)
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.Email))
                 return BadRequest(new { message = "El email es requerido." });
 
-            // generar código 6 dígitos
             var rng = new Random();
             var code = rng.Next(0, 1000000).ToString("D6");
 
-            // guardar en memoria con expiración (5 minutos)
             var entry = new TwoFaEntry
             {
                 Code = code,
@@ -102,27 +116,20 @@ namespace CRM_DocumentIA.Server.Controllers
             };
             _twoFaStore[dto.Email.ToLowerInvariant()] = entry;
 
-            // enviar correo (HTML simple)
-            var subject = "Código de verificación - CRM DocumentIA";
-            var body = $"<p>Tu código de verificación es: <strong>{code}</strong></p><p>Expira en 5 minutos.</p>";
-
             try
             {
-                await _smtpEmailService.SendEmailAsync(dto.Email, subject, body);
+                await _servicioAuth.EnviarCodigo2FAAsync(dto.Email, code);
                 return Ok(new { message = "Código enviado." });
             }
             catch (Exception ex)
             {
-                // si falla el envío, remueve el código guardado
                 _twoFaStore.TryRemove(dto.Email.ToLowerInvariant(), out _);
-                // log ex si quieres
                 return StatusCode(500, new { message = "No se pudo enviar el correo.", detail = ex.Message });
             }
         }
 
-        // POST: api/auth/verify-2fa-code
         [HttpPost("verify-2fa-code")]
-        public IActionResult Verify2FaCode([FromBody] Verificacion2FADTO dto)
+        public async Task<IActionResult> Verify2FaCode([FromBody] Verificacion2FADTO dto)
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Codigo))
                 return BadRequest(new { message = "Email y código son requeridos." });
@@ -131,21 +138,18 @@ namespace CRM_DocumentIA.Server.Controllers
             if (!_twoFaStore.TryGetValue(key, out var entry))
                 return BadRequest(new { message = "No hay un código pendiente para este email." });
 
-            // revisar expiración
             if (entry.ExpiresAt < DateTime.UtcNow)
             {
                 _twoFaStore.TryRemove(key, out _);
                 return BadRequest(new { message = "El código ha expirado." });
             }
 
-            // revisar intentos
             if (entry.Attempts >= 5)
             {
                 _twoFaStore.TryRemove(key, out _);
                 return BadRequest(new { message = "Se ha excedido el número de intentos. Solicita un nuevo código." });
             }
 
-            // comparar código
             if (entry.Code != dto.Codigo)
             {
                 entry.Attempts++;
@@ -153,11 +157,27 @@ namespace CRM_DocumentIA.Server.Controllers
                 return BadRequest(new { message = "Código inválido." });
             }
 
-            // correcto: eliminar y devolver success
+            // ✅ Código correcto → autenticamos
             _twoFaStore.TryRemove(key, out _);
-            return Ok(new { message = "Código verificado." });
+
+            var usuario = await _usuarioRepository.ObtenerPorEmailAsync(dto.Email);
+            if (usuario == null) return Unauthorized(new { message = "Usuario no encontrado." });
+
+            var token = _jwtService.GenerarToken(usuario);
+
+            return Ok(new
+            {
+                message = "Código verificado.",
+                token,
+                usuario = new
+                {
+                    usuario.Id,
+                    usuario.Nombre,
+                    Email = usuario.Email.Valor,
+                    usuario.Rol
+                }
+            });
         }
 
     }
-
 }

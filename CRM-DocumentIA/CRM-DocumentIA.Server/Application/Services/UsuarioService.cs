@@ -38,17 +38,13 @@ namespace CRM_DocumentIA.Server.Application.Services
             var usuario = await _repositorioUsuario.ObtenerPorIdAsync(idUsuario);
 
             if (usuario == null)
-            {
-                // Manejo de errores
                 throw new KeyNotFoundException($"Usuario con Id {idUsuario} no encontrado.");
-            }
 
-            // Aplicar solo el nombre si fue proporcionado
             if (!string.IsNullOrEmpty(dto.Nombre))
-            {
                 usuario.Nombre = dto.Nombre;
-            }
-            // NOTA: Para seguridad, la actualización de credenciales (email/pass) debe ir en un servicio aparte o un método más estricto.
+
+            if (dto.DobleFactorActivado.HasValue) // 👈 si mandas este campo desde el front
+                usuario.DobleFactorActivado = dto.DobleFactorActivado.Value;
 
             await _repositorioUsuario.ActualizarAsync(usuario);
         }
