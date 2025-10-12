@@ -63,23 +63,6 @@ namespace CRM_DocumentIA.Server.Controllers
             }
         }
 
-        // 🎯 ENDPOINT: Login Social (Llamado 'SOCIAL_LOGIN' en el frontend)
-        [HttpPost("social-login")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RespuestaAuthDTO))]
-        public async Task<IActionResult> SocialLogin([FromBody] LoginSocialDTO dto)
-        {
-            try
-            {
-                var respuesta = await _servicioAuth.LoginSocialAsync(dto);
-                return Ok(respuesta);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { success = false, message = $"Error en el login social: {ex.Message}" });
-            }
-        }
-
-        // Entrada para almacenamiento temporal (email -> entry)
         private class TwoFaEntry
         {
             public string Code { get; set; } = string.Empty;

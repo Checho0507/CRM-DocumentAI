@@ -36,7 +36,7 @@ export default function Header() {
             {/* 🎯 Mostrar Nombre Completo en Mayúsculas */}
             <span className="font-semibold text-gray-700">{displayUserName}</span>
             <button
-              onClick={() => signOut()}
+              onClick={() => signOut({ callbackUrl: "/login" })}
               className="ml-4 px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-150"
             >
               Cerrar Sesión

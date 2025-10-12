@@ -14,11 +14,20 @@ const handler = NextAuth({
     CredentialsProvider({
       name: "Credentials",
       credentials: {
+        name: { label: "Name", type: "text" },
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
+        token: { label: "Token", type: "text" }, // para 2FA
       },
       async authorize(credentials) {
         try {
+          if (credentials?.token) {
+        return {
+          email: credentials.email,
+          token: credentials.token,
+          name: credentials.name
+        };
+      }
           // 1. Lógica de Credenciales: Perfecta, ya mapea el JWT al objeto 'user'
           const res = await fetch(API_ROUTES.LOGIN, {
             method: "POST",
@@ -26,6 +35,7 @@ const handler = NextAuth({
             body: JSON.stringify({
               email: credentials?.email,
               password: credentials?.password,
+              name: credentials?.name,
             }),
           });
 
@@ -58,7 +68,9 @@ const handler = NextAuth({
   callbacks: {
     async signIn({ user, account }) {
       console.log("🔐 SignIn callback:", {
+        name: user?.name,
         email: user?.email,
+        token: user?.token,
         provider: account?.provider,
       });
 
@@ -143,6 +155,9 @@ const handler = NextAuth({
         }
         if (url === `${baseUrl}/api/auth/signin` || url === `${baseUrl}/login`) {
             return `${baseUrl}/dashboard`;
+        }
+        if (url === `${baseUrl}/api/auth/signout`) {
+            return `${baseUrl}/login`;  // 👈 redirige al login al cerrar sesión
         }
         return url.startsWith("/") ? `${baseUrl}${url}` : url;
     },

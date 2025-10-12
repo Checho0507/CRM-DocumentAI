@@ -7,6 +7,9 @@ export const API_ROUTES = {
   LOGIN: `${BACKEND_BASE_URL}/api/auth/login`,
   REGISTER: `${BACKEND_BASE_URL}/api/auth/register`,
   SOCIAL_LOGIN: `${BACKEND_BASE_URL}/api/auth/social-login`,
+  SEND_2FA_CODE: `${BACKEND_BASE_URL}/api/auth/send-2fa-code`,
+  VERIFY_2FA: `${BACKEND_BASE_URL}/api/auth/verify-2fa-code`,
+
   // Rutas de Documentos
   UPLOAD_DOCUMENT: `${BACKEND_BASE_URL}/api/documento/upload`,
   GET_PERFIL: `${BACKEND_BASE_URL}/api/usuario/perfil`,
