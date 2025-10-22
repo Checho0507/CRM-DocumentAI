@@ -3,7 +3,7 @@
 "ServerUrl": "https://localhost:49431",
 "RedirectUrl": "",
 "LaunchCommand": "npm run dev",
-"WorkingDirectory": "C:\\Users\\felipe\\Desktop\\CRM-DocumentAI-1\\CRM-DocumentIA\\CRM-DocumentIA.Server\\..\\crm-documentia1.client",
+"WorkingDirectory": "/home/sergio/Documentos/CRM-DocumentAI/CRM-DocumentIA/CRM-DocumentIA.Server/../crm-documentia.client",
 "MaxTimeoutInSeconds": "120",
 "KeepRunning": "false"
 }
