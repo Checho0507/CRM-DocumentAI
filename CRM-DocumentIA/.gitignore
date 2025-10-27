@@ -18,3 +18,9 @@ out/
 # Configuración local
 *.env
 *.env.local
+
+# Ignorar archivos compilados
+*.dll
+*.pdb
+bin/
+obj/
