@@ -16,7 +16,7 @@ public class Documento
     public string NombreArchivo { get; set; } = string.Empty;
 
     [MaxLength(50)]
-    public string? TipoDocumento { get; set; } // Factura, Contrato, etc.
+    public string? TipoDocumento { get; set; }
 
     [MaxLength(500)]
     public string? RutaArchivo { get; set; }
@@ -26,13 +26,17 @@ public class Documento
 
     public string? ContenidoExtraido { get; set; }
 
-    // Relación con Cliente (muchos a uno)
+    // 🔹 Nuevo campo: contenido binario del archivo
+    public byte[]? ArchivoDocumento { get; set; }
+
+    // 🔹 Nuevo campo: JSON con metadatos del documento
+    public string? ArchivoMetadataJson { get; set; }
+
+    // Relaciones
     [ForeignKey("ClienteId")]
     public virtual Cliente Cliente { get; set; } = null!;
 
-    // Relación con ProcesosAI (uno a muchos)
     public virtual ICollection<ProcesoIA> ProcesosIA { get; set; } = new List<ProcesoIA>();
 
-    // **NUEVA PROPIEDAD DE NAVEGACIÓN:** Relación 1:N con Insights
     public ICollection<Insight> Insights { get; set; } = new List<Insight>();
 }

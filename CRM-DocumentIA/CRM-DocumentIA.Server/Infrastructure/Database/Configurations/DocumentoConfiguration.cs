@@ -25,6 +25,16 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database.Configurations
             builder.Property(d => d.FechaSubida)
                 .HasDefaultValueSql("GETDATE()");
 
+            // 🔹 Configuración para el campo binario del archivo
+            builder.Property(d => d.ArchivoDocumento)
+                .HasColumnType("varbinary(max)")
+                .IsRequired(false);
+
+            // 🔹 Configuración para el JSON de metadatos
+            builder.Property(d => d.ArchivoMetadataJson)
+                .HasColumnType("nvarchar(max)")
+                .IsRequired(false);
+
             builder.HasOne(d => d.Cliente)
                 .WithMany(c => c.Documentos)
                 .HasForeignKey(d => d.ClienteId)
