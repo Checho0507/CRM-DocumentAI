@@ -4,6 +4,8 @@ import { useState } from "react";
 import Layout from "@/components/Layout/Layout";
 import { FaUpload } from "react-icons/fa";
 import DocumentCard from "@/components/Common/DocumentCard";
+import axios from "axios";
+import { API_ROUTES } from "@/lib/apiRoutes";
 
 export default function DocumentsPage() {
   interface Document {
@@ -13,33 +15,57 @@ export default function DocumentsPage() {
     date: string;
   }
 
-  const [documents, setDocuments] = useState<Document[]>([
-    { name: "Contrato_Servicios_ABC.pdf", type: "PDF", size: "1.2 MB", date: "2023-10-01" },
-    { name: "Propuesta_Corporación_XYZ.docx", type: "Word", size: "890 KB", date: "2023-09-18" },
-    { name: "Informe_Financiero_Q3.xlsx", type: "Excel", size: "2.1 MB", date: "2023-09-05" },
-    { name: "Cláusulas_Actualizadas_2023.pdf", type: "PDF", size: "640 KB", date: "2023-08-27" },
-  ]);
-
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [dragActive, setDragActive] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [clienteId, setClienteId] = useState<number>(1); // temporalmente fijo
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragActive(false);
+  // 🔹 Función para subir archivo al backend
+  const uploadToBackend = async (file: File) => {
+    const formData = new FormData();
+    formData.append("archivo", file);
+    formData.append("clienteId", clienteId.toString());
 
-    const files = Array.from(e.dataTransfer.files);
-    const newDocs = files.map((file) => ({
-      name: file.name,
-      type:
-        file.name.endsWith(".pdf")
+    try {
+      setUploading(true);
+      const response = await axios.post(API_ROUTES.UP_DOCUMENT, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      console.log("✅ Subido:", response.data);
+
+      const newDoc: Document = {
+        name: file.name,
+        type: file.name.endsWith(".pdf")
           ? "PDF"
           : file.name.endsWith(".docx")
           ? "Word"
           : "Excel",
-      size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-      date: new Date().toISOString().split("T")[0],
-    }));
+        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+        date: new Date().toISOString().split("T")[0],
+      };
 
-    setDocuments((prev) => [...newDocs, ...prev]);
+      setDocuments((prev) => [newDoc, ...prev]);
+    } catch (error) {
+      console.error("❌ Error al subir:", error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 🔹 Cuando sueltan archivos en el área
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragActive(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    for (const file of files) await uploadToBackend(file);
+  };
+
+  // 🔹 Cuando seleccionan archivos manualmente
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    for (const file of files) await uploadToBackend(file);
   };
 
   const handleRemove = (name: string) => {
@@ -71,33 +97,22 @@ export default function DocumentsPage() {
         <p className="text-gray-700 font-medium mb-2">
           Arrastra tus documentos aquí o haz clic para subir
         </p>
-        <p className="text-sm text-gray-500">Formatos permitidos: PDF, Word, Excel</p>
+        <p className="text-sm text-gray-500 mb-4">
+          Formatos permitidos: PDF, Word, Excel
+        </p>
+
         <input
           type="file"
           multiple
           className="hidden"
           id="fileInput"
-          onChange={(e) => {
-            const files = Array.from(e.target.files || []);
-            const newDocs = files.map((file) => ({
-              name: file.name,
-              type:
-                file.name.endsWith(".pdf")
-                  ? "PDF"
-                  : file.name.endsWith(".docx")
-                  ? "Word"
-                  : "Excel",
-              size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-              date: new Date().toISOString().split("T")[0],
-            }));
-            setDocuments((prev) => [...newDocs, ...prev]);
-          }}
+          onChange={handleFileSelect}
         />
         <label
           htmlFor="fileInput"
           className="mt-4 inline-block px-5 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700"
         >
-          Seleccionar archivos
+          {uploading ? "Subiendo..." : "Seleccionar archivos"}
         </label>
       </div>
 

@@ -1,0 +1,4 @@
+[submodule "rag_service"]
+    path = /home/sergio/Documentos/CRM-DocumentAI/CRM-DocumentIA/rag_service
+    url = https://github.com/JeYeMC/rag-service.git
+    branch = master

@@ -1,6 +1,6 @@
-﻿using CRM_DocumentIA.Server.Application.Services;
+﻿using Microsoft.AspNetCore.Mvc;
 using CRM_DocumentIA.Server.Domain.Entities;
-using Microsoft.AspNetCore.Mvc;
+using CRM_DocumentIA.Server.Application.Services;
 
 namespace CRM_DocumentIA.Server.Controllers
 {
@@ -9,43 +9,58 @@ namespace CRM_DocumentIA.Server.Controllers
     public class DocumentoController : ControllerBase
     {
         private readonly DocumentoService _documentoService;
+        private readonly IWebHostEnvironment _environment;
 
-        public DocumentoController(DocumentoService documentoService)
+        public DocumentoController(DocumentoService documentoService, IWebHostEnvironment environment)
         {
             _documentoService = documentoService;
+            _environment = environment;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-            => Ok(await _documentoService.ObtenerTodosAsync());
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
+        [HttpPost("upload")]
+        public async Task<IActionResult> Upload([FromForm] IFormFile archivo, [FromForm] int clienteId)
         {
-            var documento = await _documentoService.ObtenerPorIdAsync(id);
-            return documento == null ? NotFound() : Ok(documento);
-        }
+            if (archivo == null || archivo.Length == 0)
+                return BadRequest("Archivo no válido");
 
-        [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Documento documento)
-        {
+            // Convertir archivo a bytes para almacenarlo en la BD
+            byte[] archivoBytes;
+            using (var memoryStream = new MemoryStream())
+            {
+                await archivo.CopyToAsync(memoryStream);
+                archivoBytes = memoryStream.ToArray();
+            }
+
+            // Crear carpeta si no existe (opcional si también quieres guardarlo físico)
+            var uploadsFolder = Path.Combine(_environment.ContentRootPath, "Uploads");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var filePath = Path.Combine(uploadsFolder, archivo.FileName);
+            await System.IO.File.WriteAllBytesAsync(filePath, archivoBytes);
+
+            // Crear objeto Documento con toda la info
+            var documento = new Documento
+            {
+                ClienteId = clienteId,
+                NombreArchivo = archivo.FileName,
+                TipoDocumento = Path.GetExtension(archivo.FileName),
+                RutaArchivo = filePath,
+                FechaSubida = DateTime.UtcNow,
+                Procesado = false,
+                ArchivoDocumento = archivoBytes, // ✅ Importante
+                ArchivoMetadataJson = null       // Por ahora sin metadatos
+            };
+
             await _documentoService.AgregarAsync(documento);
-            return CreatedAtAction(nameof(Get), new { id = documento.Id }, documento);
+
+            return Ok(new
+            {
+                mensaje = "Archivo subido correctamente",
+                documentoId = documento.Id,
+                ruta = filePath
+            });
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Put(int id, [FromBody] Documento documento)
-        {
-            if (id != documento.Id) return BadRequest();
-            await _documentoService.ActualizarAsync(documento);
-            return NoContent();
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            await _documentoService.EliminarAsync(id);
-            return NoContent();
-        }
     }
 }

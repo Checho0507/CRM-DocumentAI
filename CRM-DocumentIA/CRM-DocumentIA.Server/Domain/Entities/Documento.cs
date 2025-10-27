@@ -11,8 +11,7 @@ public class Documento
     [Required]
     public int ClienteId { get; set; }
 
-    [Required]
-    [MaxLength(255)]
+    [Required, MaxLength(255)]
     public string NombreArchivo { get; set; } = string.Empty;
 
     [MaxLength(50)]
@@ -21,15 +20,15 @@ public class Documento
     [MaxLength(500)]
     public string? RutaArchivo { get; set; }
 
-    public DateTime FechaSubida { get; set; } = DateTime.Now;
+    public DateTime FechaSubida { get; set; } = DateTime.UtcNow;
+
     public bool Procesado { get; set; } = false;
 
     public string? ContenidoExtraido { get; set; }
 
-    // 🔹 Nuevo campo: contenido binario del archivo
+    // ✅ Estas 2 propiedades son opcionales
     public byte[]? ArchivoDocumento { get; set; }
 
-    // 🔹 Nuevo campo: JSON con metadatos del documento
     public string? ArchivoMetadataJson { get; set; }
 
     // Relaciones
@@ -37,6 +36,5 @@ public class Documento
     public virtual Cliente Cliente { get; set; } = null!;
 
     public virtual ICollection<ProcesoIA> ProcesosIA { get; set; } = new List<ProcesoIA>();
-
-    public ICollection<Insight> Insights { get; set; } = new List<Insight>();
+    public virtual ICollection<Insight> Insights { get; set; } = new List<Insight>();
 }
