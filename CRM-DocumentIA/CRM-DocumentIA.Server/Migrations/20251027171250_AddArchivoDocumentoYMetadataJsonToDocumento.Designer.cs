@@ -4,6 +4,7 @@ using CRM_DocumentIA.Server.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CRM_DocumentIA.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251027171250_AddArchivoDocumentoYMetadataJsonToDocumento")]
+    partial class AddArchivoDocumentoYMetadataJsonToDocumento
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -75,7 +78,7 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.Property<string>("ArchivoMetadataJson")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ClienteId")
+                    b.Property<int>("ClienteId")
                         .HasColumnType("int");
 
                     b.Property<string>("ContenidoExtraido")
@@ -92,29 +95,19 @@ namespace CRM_DocumentIA.Server.Migrations
                         .HasColumnType("nvarchar(255)");
 
                     b.Property<bool>("Procesado")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
+                        .HasColumnType("bit");
 
                     b.Property<string>("RutaArchivo")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<long?>("TamañoArchivo")
-                        .HasColumnType("bigint");
-
                     b.Property<string>("TipoDocumento")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("UsuarioId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ClienteId");
-
-                    b.HasIndex("UsuarioId");
 
                     b.ToTable("Documentos", (string)null);
                 });
@@ -222,7 +215,7 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.ToTable("TwoFA");
                 });
 
-            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Usuario", b =>
+            modelBuilder.Entity("Usuario", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -231,45 +224,45 @@ namespace CRM_DocumentIA.Server.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("DobleFactorActivado")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("Rol")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("nvarchar(max)")
                         .HasDefaultValue("usuario");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
 
                     b.ToTable("Usuarios", (string)null);
                 });
 
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Documento", b =>
                 {
-                    b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Cliente", null)
+                    b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Cliente", "Cliente")
                         .WithMany("Documentos")
-                        .HasForeignKey("ClienteId");
-
-                    b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Usuario", "Usuario")
-                        .WithMany("Documentos")
-                        .HasForeignKey("UsuarioId")
+                        .HasForeignKey("ClienteId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Usuario");
+                    b.Navigation("Cliente");
                 });
 
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Insight", b =>
@@ -301,31 +294,6 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.Navigation("Documento");
                 });
 
-            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Usuario", b =>
-                {
-                    b.OwnsOne("CRM_DocumentIA.Domain.ValueObjects.Email", "Email", b1 =>
-                        {
-                            b1.Property<int>("UsuarioId")
-                                .HasColumnType("int");
-
-                            b1.Property<string>("Value")
-                                .IsRequired()
-                                .HasMaxLength(255)
-                                .HasColumnType("nvarchar(255)")
-                                .HasColumnName("Email");
-
-                            b1.HasKey("UsuarioId");
-
-                            b1.ToTable("Usuarios");
-
-                            b1.WithOwner()
-                                .HasForeignKey("UsuarioId");
-                        });
-
-                    b.Navigation("Email")
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Cliente", b =>
                 {
                     b.Navigation("Documentos");
@@ -338,11 +306,6 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.Navigation("Insights");
 
                     b.Navigation("ProcesosIA");
-                });
-
-            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Usuario", b =>
-                {
-                    b.Navigation("Documentos");
                 });
 #pragma warning restore 612, 618
         }

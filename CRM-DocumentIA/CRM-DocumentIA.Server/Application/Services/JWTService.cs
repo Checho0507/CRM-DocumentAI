@@ -1,15 +1,12 @@
-﻿// Application/Services/JwtService.cs
-
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using CRM_DocumentIA.Server.Domain.Entities; // Para usar la entidad Usuario
+using CRM_DocumentIA.Server.Domain.Entities;
 
 namespace CRM_DocumentIA.Server.Application.Services
 {
-    // Clase renombrada a JwtService
     public class JWTService
     {
         private readonly IConfiguration _configuration;
@@ -19,7 +16,6 @@ namespace CRM_DocumentIA.Server.Application.Services
             _configuration = configuration;
         }
 
-        // Método renombrado a GenerarToken (siguiendo el estilo original de su proyecto)
         public string GenerarToken(Usuario usuario)
         {
             // 1. Obtener la clave secreta
@@ -30,9 +26,8 @@ namespace CRM_DocumentIA.Server.Application.Services
             // 2. Definir los Claims (la información que irá en el token)
             var claims = new[]
             {
-                // Este claim es crucial para el ObtenerUsuarioId() en el controlador
                 new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
-                new Claim(ClaimTypes.Email, usuario.Email.Valor),
+                new Claim(ClaimTypes.Email, usuario.Email.Value), // ✅ Cambiado a .Value
                 new Claim(ClaimTypes.Role, usuario.Rol),
                 new Claim(ClaimTypes.Name, usuario.Nombre)
             };
@@ -42,7 +37,7 @@ namespace CRM_DocumentIA.Server.Application.Services
                 issuer: _configuration["JwtSettings:Issuer"],
                 audience: _configuration["JwtSettings:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["JwtSettings:ExpiryMinutes"])),
+                expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["JwtSettings:ExpiryMinutes"] ?? "1440")), // ✅ Valor por defecto
                 signingCredentials: credentials);
 
             // 4. Escribir y devolver el token

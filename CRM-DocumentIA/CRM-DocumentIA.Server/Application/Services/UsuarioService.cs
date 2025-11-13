@@ -1,52 +1,56 @@
-﻿// Application/Services/UsuarioService.cs
-
-using CRM_DocumentIA.Server.Application.DTOs.Usuario;
+﻿using CRM_DocumentIA.Server.Domain.Entities;
 using CRM_DocumentIA.Server.Domain.Interfaces;
-using System.ComponentModel.DataAnnotations;
-using System.Security.Cryptography.X509Certificates;
 
 namespace CRM_DocumentIA.Server.Application.Services
 {
-    public class UsuarioService // Se elimina la interfaz IServicioUsuario
+    public class UsuarioService
     {
-        private readonly IUsuarioRepository _repositorioUsuario;
+        private readonly IUsuarioRepository _usuarioRepository;
 
-        public UsuarioService(IUsuarioRepository repositorioUsuario)
+        public UsuarioService(IUsuarioRepository usuarioRepository)
         {
-            _repositorioUsuario = repositorioUsuario;
+            _usuarioRepository = usuarioRepository;
         }
 
-        public async Task<UsuarioDTO?> ObtenerPerfilAsync(int idUsuario)
+        public async Task<Usuario?> ObtenerPorEmailAsync(string email)
         {
-            var usuario = await _repositorioUsuario.ObtenerPorIdAsync(idUsuario);
-
-            if (usuario == null) return null;
-
-            // Mapeo manual a DTO
-            return new UsuarioDTO
-            {
-                Id = usuario.Id,
-                Nombre = usuario.Nombre,
-                Email = usuario.Email.Valor,
-                Rol = usuario.Rol,
-                DobleFactorActivado = usuario.DobleFactorActivado
-            };
+            return await _usuarioRepository.ObtenerPorEmailAsync(email);
         }
 
-        public async Task ActualizarPerfilAsync(int idUsuario, ActualizacionUsuarioDTO dto)
+        public async Task<Usuario?> ObtenerPorIdAsync(int id)
         {
-            var usuario = await _repositorioUsuario.ObtenerPorIdAsync(idUsuario);
+            return await _usuarioRepository.ObtenerPorIdAsync(id);
+        }
 
-            if (usuario == null)
-                throw new KeyNotFoundException($"Usuario con Id {idUsuario} no encontrado.");
+        public async Task<IEnumerable<Usuario>> ObtenerTodosAsync()
+        {
+            return await _usuarioRepository.ObtenerTodosAsync();
+        }
 
-            if (!string.IsNullOrEmpty(dto.Nombre))
-                usuario.Nombre = dto.Nombre;
+        public async Task AgregarAsync(Usuario usuario)
+        {
+            await _usuarioRepository.AgregarAsync(usuario);
+        }
 
-            if (dto.DobleFactorActivado.HasValue) // 👈 si mandas este campo desde el front
-                usuario.DobleFactorActivado = dto.DobleFactorActivado.Value;
+        public async Task ActualizarAsync(Usuario usuario)
+        {
+            await _usuarioRepository.ActualizarAsync(usuario);
+        }
 
-            await _repositorioUsuario.ActualizarAsync(usuario);
+        public async Task EliminarAsync(int id)
+        {
+            await _usuarioRepository.EliminarAsync(id);
+        }
+
+        // ✅ AGREGAR ESTOS MÉTODOS FALTANTES
+        public async Task<Usuario?> ObtenerPerfilAsync(int usuarioId)
+        {
+            return await _usuarioRepository.ObtenerPorIdAsync(usuarioId);
+        }
+
+        public async Task ActualizarPerfilAsync(Usuario usuario)
+        {
+            await _usuarioRepository.ActualizarAsync(usuario);
         }
     }
 }

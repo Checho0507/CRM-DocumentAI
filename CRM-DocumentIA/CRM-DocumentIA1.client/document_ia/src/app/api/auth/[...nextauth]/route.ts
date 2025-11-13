@@ -45,7 +45,7 @@ const handler = NextAuth({
           }
           
           const data = await res.json(); 
-          console.log("✅ Login successful:", data.usuario.email);
+          console.log("✅ Login successful:", data.usuario.email, data.usuario.id);
 
           // 2. Retorna el objeto 'user' simple con el JWT adjunto
           const user = {
@@ -55,7 +55,7 @@ const handler = NextAuth({
             role: data.usuario.rol,
             token: data.token, // 🎯 PROPIEDAD CLAVE
           };
-
+          console.log("Marlon usuarioSession", user)
           return user;
         } catch (error) {
           console.error("🚨 Authorize error:", error);
@@ -105,7 +105,7 @@ const handler = NextAuth({
           user.role = data.usuario.rol;
           user.name = data.usuario.nombre;
           user.token = data.token; // 🎯 Adjuntamos el JWT
-
+          console.log("MArlon UserSession Google", data.usuario)
           return true; // Permite el inicio de sesión
 
         } catch (error) {

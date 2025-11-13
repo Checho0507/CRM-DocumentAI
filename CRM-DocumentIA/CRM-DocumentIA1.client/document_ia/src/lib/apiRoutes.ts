@@ -11,6 +11,7 @@ export const API_ROUTES = {
   VERIFY_2FA: `${BACKEND_BASE_URL}/api/auth/verify-2fa-code`,
 
   // Rutas de Documentos
-  UPLOAD_DOCUMENT: `${BACKEND_BASE_URL}/api/documento/upload`,
+  UP_DOCUMENT: `${BACKEND_BASE_URL}/api/Documento`,
+  UPLOAD_DOCUMENT: `${BACKEND_BASE_URL}/api/Documento/upload`,
   GET_PERFIL: `${BACKEND_BASE_URL}/api/usuario/perfil`,
 };

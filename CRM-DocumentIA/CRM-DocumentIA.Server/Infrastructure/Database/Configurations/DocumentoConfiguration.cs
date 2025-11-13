@@ -25,11 +25,44 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database.Configurations
             builder.Property(d => d.FechaSubida)
                 .HasDefaultValueSql("GETDATE()");
 
-            builder.HasOne(d => d.Cliente)
-                .WithMany(c => c.Documentos)
-                .HasForeignKey(d => d.ClienteId)
+            builder.Property(d => d.TamañoArchivo)
+                .IsRequired(false);
+
+            builder.Property(d => d.EstadoProcesamiento)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasDefaultValue("pendiente");
+
+            builder.Property(d => d.UrlServicioIA)
+                .HasMaxLength(1000);
+
+            builder.Property(d => d.ErrorProcesamiento)
+                .HasMaxLength(2000);
+
+            // Configuración para el campo binario del archivo
+            builder.Property(d => d.ArchivoDocumento)
+                .HasColumnType("varbinary(max)")
+                .IsRequired(false);
+
+            // Configuración para el JSON de metadatos
+            builder.Property(d => d.ArchivoMetadataJson)
+                .HasColumnType("nvarchar(max)")
+                .IsRequired(false);
+
+            // Configuración para el resumen del documento
+            builder.Property(d => d.ResumenDocumento)
+                .HasColumnType("nvarchar(max)")
+                .IsRequired(false);
+
+            // Relación con Usuario
+            builder.HasOne(d => d.Usuario)
+                .WithMany(u => u.Documentos)
+                .HasForeignKey(d => d.UsuarioId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
+
+            // Relación con ProcesosIA (ya configurada en ProcesoIAConfiguration)
+            // Relación con Insights (se configurará después)
         }
     }
 }

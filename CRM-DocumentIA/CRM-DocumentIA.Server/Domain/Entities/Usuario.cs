@@ -1,6 +1,7 @@
-﻿// Domain/Entities/Usuario.cs (Actualización)
+﻿using CRM_DocumentIA.Domain.ValueObjects;
+using System.ComponentModel.DataAnnotations;
 
-using CRM_DocumentIA.Domain.ValueObjects; // Añade el using
+namespace CRM_DocumentIA.Server.Domain.Entities;
 
 public class Usuario
 {
@@ -12,14 +13,20 @@ public class Usuario
         Rol = rol;
     }
 
+    // Constructor vacío para EF Core
+    public Usuario() { }
+
     public int Id { get; set; }
     public string Nombre { get; set; } = string.Empty;
 
-    public Email Email { get; set; } = null!; // Ya no es string
+    public Email Email { get; set; } = null!;
 
     public string PasswordHash { get; set; } = string.Empty;
     public string Rol { get; set; } = "usuario";
     public bool DobleFactorActivado { get; internal set; }
 
-    // ... (otras propiedades)
+    // ✅ Agregar la relación inversa con Documento
+    public virtual ICollection<Documento> Documentos { get; set; } = new List<Documento>();
+
+    // ... (otras propiedades que ya tengas)
 }

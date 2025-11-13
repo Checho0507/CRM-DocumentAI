@@ -5,40 +5,60 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRM_DocumentIA.Server.Infrastructure.Repositories
 {
-    public class ProcesoIARepository : IProcesoIARepository
+    public class DocumentoRepository : IDocumentoRepository
     {
         private readonly ApplicationDbContext _context;
 
-        public ProcesoIARepository(ApplicationDbContext context)
+        public DocumentoRepository(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        public async Task<IEnumerable<ProcesoIA>> ObtenerTodosAsync()
-            => await _context.ProcesosIA.Include(p => p.Documento).ToListAsync();
+        public async Task<IEnumerable<Documento>> ObtenerTodosAsync()
+            => await _context.Documentos
+                .Include(d => d.Usuario)
+                .Include(d => d.ProcesosIA)
+                .ToListAsync();
 
-        public async Task<ProcesoIA?> ObtenerPorIdAsync(int id)
-            => await _context.ProcesosIA.Include(p => p.Documento)
-                                        .FirstOrDefaultAsync(p => p.Id == id);
+        public async Task<Documento?> ObtenerPorIdAsync(int id)
+            => await _context.Documentos
+                .Include(d => d.Usuario)
+                .Include(d => d.ProcesosIA)
+                .FirstOrDefaultAsync(d => d.Id == id);
 
-        public async Task AgregarAsync(ProcesoIA procesoIA)
+        public async Task<IEnumerable<Documento>> ObtenerPorUsuarioIdAsync(int usuarioId)
+            => await _context.Documentos
+                .Where(d => d.UsuarioId == usuarioId)
+                .Include(d => d.Usuario)
+                .Include(d => d.ProcesosIA)
+                .OrderByDescending(d => d.FechaSubida)
+                .ToListAsync();
+
+        public async Task<IEnumerable<Documento>> ObtenerPorEstadoAsync(string estado)
+            => await _context.Documentos
+                .Where(d => d.EstadoProcesamiento == estado)
+                .Include(d => d.Usuario)
+                .Include(d => d.ProcesosIA)
+                .ToListAsync();
+
+        public async Task AgregarAsync(Documento documento)
         {
-            await _context.ProcesosIA.AddAsync(procesoIA);
+            await _context.Documentos.AddAsync(documento);
             await _context.SaveChangesAsync();
         }
 
-        public async Task ActualizarAsync(ProcesoIA procesoIA)
+        public async Task ActualizarAsync(Documento documento)
         {
-            _context.ProcesosIA.Update(procesoIA);
+            _context.Documentos.Update(documento);
             await _context.SaveChangesAsync();
         }
 
         public async Task EliminarAsync(int id)
         {
-            var proceso = await _context.ProcesosIA.FindAsync(id);
-            if (proceso != null)
+            var documento = await _context.Documentos.FindAsync(id);
+            if (documento != null)
             {
-                _context.ProcesosIA.Remove(proceso);
+                _context.Documentos.Remove(documento);
                 await _context.SaveChangesAsync();
             }
         }

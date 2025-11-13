@@ -1,28 +1,39 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace CRM_DocumentIA.Server.Domain.Entities;
-
-
-public class ProcesoIA
+namespace CRM_DocumentIA.Server.Domain.Entities
 {
-    [Key]
-    public int Id { get; set; }
+    public class ProcesoIA
+    {
+        [Key]
+        public int Id { get; set; }
 
-    [Required]
-    public int DocumentoId { get; set; }
+        [Required]
+        public int DocumentoId { get; set; }
 
-    [MaxLength(50)]
-    public string? TipoProceso { get; set; } // OCR, Clasificación, Extracción
+        [Required, MaxLength(100)]
+        public string TipoProcesamiento { get; set; } = "analisis_documento";
 
-    [MaxLength(20)]
-    public string Estado { get; set; } = "Pendiente"; // Pendiente, Procesando, Completado, Error
+        public DateTime FechaInicio { get; set; } = DateTime.UtcNow;
+        
+        public DateTime? FechaFin { get; set; }
 
-    public string? Resultado { get; set; }
-    public DateTime? FechaInicio { get; set; }
-    public DateTime? FechaFin { get; set; }
+        [Required, MaxLength(50)]
+        public string Estado { get; set; } = "pendiente"; // "pendiente", "procesando", "completado", "error"
 
-    // Relación con Documento (muchos a uno)
-    [ForeignKey("DocumentoId")]
-    public virtual Documento Documento { get; set; } = null!;
+        [Column(TypeName = "nvarchar(max)")]
+        public string? ResultadoJson { get; set; }
+
+        [MaxLength(1000)]
+        public string? Error { get; set; }
+
+        [MaxLength(500)]
+        public string? UrlServicio { get; set; }
+
+        public double? TiempoProcesamientoSegundos { get; set; }
+
+        // Relación
+        [ForeignKey("DocumentoId")]
+        public virtual Documento Documento { get; set; } = null!;
+    }
 }
