@@ -6,6 +6,7 @@ namespace CRM_DocumentIA.Server.Domain.Interfaces
     {
         Task<IEnumerable<Documento>> ObtenerTodosAsync();
         Task<Documento?> ObtenerPorIdAsync(int id);
+        Task<IEnumerable<Documento>> ObtenerPorUsuarioIdAsync(int usuarioId); // ✅ NUEVO MÉTODO
         Task AgregarAsync(Documento documento);
         Task ActualizarAsync(Documento documento);
         Task EliminarAsync(int id);

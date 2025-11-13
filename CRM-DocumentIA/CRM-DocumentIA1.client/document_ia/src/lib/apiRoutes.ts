@@ -12,6 +12,6 @@ export const API_ROUTES = {
 
   // Rutas de Documentos
   UP_DOCUMENT: `${BACKEND_BASE_URL}/api/Documento`,
-  UPLOAD_DOCUMENT: `${BACKEND_BASE_URL}/api/documento/upload`,
+  UPLOAD_DOCUMENT: `${BACKEND_BASE_URL}/api/Documento/upload`,
   GET_PERFIL: `${BACKEND_BASE_URL}/api/usuario/perfil`,
 };

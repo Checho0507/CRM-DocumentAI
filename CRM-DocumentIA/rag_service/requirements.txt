@@ -14,3 +14,7 @@ openai
 transformers
 torch
 scikit-learn
+
+langchain-community
+langchain-core
+pypdf

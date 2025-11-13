@@ -9,7 +9,7 @@ public class Documento
     public int Id { get; set; }
 
     [Required]
-    public int ClienteId { get; set; }
+    public int UsuarioId { get; set; } // ✅ Cambiado de ClienteId a UsuarioId
 
     [Required, MaxLength(255)]
     public string NombreArchivo { get; set; } = string.Empty;
@@ -26,14 +26,15 @@ public class Documento
 
     public string? ContenidoExtraido { get; set; }
 
-    // ✅ Estas 2 propiedades son opcionales
     public byte[]? ArchivoDocumento { get; set; }
 
     public string? ArchivoMetadataJson { get; set; }
 
+    public long? TamañoArchivo { get; set; } // ✅ Nuevo campo para tamaño
+
     // Relaciones
-    [ForeignKey("ClienteId")]
-    public virtual Cliente Cliente { get; set; } = null!;
+    [ForeignKey("UsuarioId")]
+    public virtual Usuario Usuario { get; set; } = null!; // ✅ Cambiado de Cliente a Usuario
 
     public virtual ICollection<ProcesoIA> ProcesosIA { get; set; } = new List<ProcesoIA>();
     public virtual ICollection<Insight> Insights { get; set; } = new List<Insight>();

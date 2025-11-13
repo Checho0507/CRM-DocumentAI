@@ -13,7 +13,6 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database
             : base(options) { }
 
         // DbSets para cada tabla
-        // Agregamos el DbSet para Usuario y Insight
         public DbSet<Usuario> Usuarios { get; set; } = null!;
         public DbSet<Insight> Insights { get; set; } = null!;
         public DbSet<Cliente> Clientes { get; set; } = null!;
@@ -25,29 +24,8 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database
         {
             base.OnModelCreating(modelBuilder);
 
-            // Conversión Email <-> string
-            var emailConverter = new ValueConverter<Email, string>(
-                email => email.Valor,          // modelo -> proveedor (DB)
-                value => new Email(value)      // proveedor -> modelo (al leer)
-            );
-
-            // Comparador para tracking y snapshots
-            var emailComparer = new ValueComparer<Email>(
-                (l, r) => l != null && r != null && l.Valor == r.Valor,
-                v => v.Valor.GetHashCode(),
-                v => new Email(v.Valor)
-            );
-
-            modelBuilder.Entity<Usuario>(builder =>
-            {
-                builder.Property(u => u.Email)
-                       .HasConversion(emailConverter)
-                       .Metadata.SetValueComparer(emailComparer);
-                // Si quieres, puedes configurar columna, longitud, etc:
-                // .HasMaxLength(320).HasColumnName("Email");
-            });
-
-            // Aplica automáticamente todas las configuraciones
+            // ✅ SOLO aplicar configuraciones desde archivos separados
+            // NO configurar Email aquí, ya está en UsuarioConfiguration.cs
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         }
     }

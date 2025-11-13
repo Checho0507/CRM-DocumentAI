@@ -1,9 +1,8 @@
 ﻿using System.Collections.Concurrent;
-using CRM_DocumentIA.Application.Services;
-using CRM_DocumentIA.Infrastructure.Repositories;
+using CRM_DocumentIA.Server.Application.Services; // ✅ Corregido
+using CRM_DocumentIA.Server.Infrastructure.Repositories;
 using CRM_DocumentIA.Server.Application.DTOs._2FA;
 using CRM_DocumentIA.Server.Application.DTOs.Auth;
-using CRM_DocumentIA.Server.Application.Services;
 using CRM_DocumentIA.Server.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,7 +12,6 @@ namespace CRM_DocumentIA.Server.Controllers
     [Route("api/auth")]
     public class AuthController : ControllerBase
     {
-
         private readonly AutenticacionService _servicioAuth;
         private readonly SmtpEmailService _smtpEmailService;
         private readonly IUsuarioRepository _usuarioRepository;
@@ -58,7 +56,6 @@ namespace CRM_DocumentIA.Server.Controllers
         [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-
         public async Task<IActionResult> Login([FromBody] LoginDTO dto)
         {
             try
@@ -76,6 +73,7 @@ namespace CRM_DocumentIA.Server.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new { success = false, message = "Error interno al iniciar sesión." });
             }
         }
+
         // 🎯 ENDPOINT: Login Social (Llamado 'SOCIAL_LOGIN' en el frontend)
         [HttpPost("social-login")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RespuestaAuthDTO))]
@@ -173,11 +171,10 @@ namespace CRM_DocumentIA.Server.Controllers
                 {
                     usuario.Id,
                     usuario.Nombre,
-                    Email = usuario.Email.Valor,
+                    Email = usuario.Email.Value, // ✅ Cambiado de .Valor a .Value
                     usuario.Rol
                 }
             });
         }
-
     }
 }

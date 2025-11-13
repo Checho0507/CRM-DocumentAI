@@ -1,76 +1,74 @@
-﻿// Controllers/UsuarioController.cs
-
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using CRM_DocumentIA.Server.Domain.Entities;
 using CRM_DocumentIA.Server.Application.Services;
-using CRM_DocumentIA.Server.Application.DTOs.Usuario;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CRM_DocumentIA.Server.Controllers
 {
-    [Authorize] // Requiere que el usuario esté autenticado con JWT
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UsuarioController : ControllerBase
     {
-        private readonly UsuarioService _servicioUsuario;
+        private readonly UsuarioService _usuarioService;
 
-        public UsuarioController(UsuarioService servicioUsuario)
+        public UsuarioController(UsuarioService usuarioService)
         {
-            _servicioUsuario = servicioUsuario;
+            _usuarioService = usuarioService;
         }
 
-        // Función auxiliar para obtener el ID del usuario del token JWT
-        private int ObtenerUsuarioId()
+        [HttpGet("perfil/{usuarioId}")]
+        public async Task<IActionResult> ObtenerPerfil(int usuarioId)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
-            {
-                // Esto no debería pasar si [Authorize] funciona correctamente
-                throw new UnauthorizedAccessException("ID de usuario no encontrado en el token.");
-            }
-            return userId;
-        }
-
-        [HttpGet("perfil")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UsuarioDTO))]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> ObtenerPerfil()
-        {
-            var userId = ObtenerUsuarioId();
-
-            var perfil = await _servicioUsuario.ObtenerPerfilAsync(userId);
-
-            if (perfil == null)
-            {
-                return NotFound(new { message = "Perfil no encontrado." });
-            }
-
-            return Ok(perfil);
-        }
-
-        [HttpPut("perfil")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> ActualizarPerfil([FromBody] ActualizacionUsuarioDTO dto)
-        {
-            var userId = ObtenerUsuarioId();
-
             try
             {
-                await _servicioUsuario.ActualizarPerfilAsync(userId, dto);
-                return Ok(new { message = "Perfil actualizado con éxito." });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
+                var usuario = await _usuarioService.ObtenerPerfilAsync(usuarioId); // ✅ Este método ahora existe
+                if (usuario == null)
+                    return NotFound(new { mensaje = "Usuario no encontrado" });
+
+                return Ok(new
+                {
+                    usuario.Id,
+                    usuario.Nombre,
+                    Email = usuario.Email.Value,
+                    usuario.Rol
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = $"Error al actualizar: {ex.Message}" });
+                return StatusCode(500, new { mensaje = "Error al obtener perfil", error = ex.Message });
             }
         }
+
+        [HttpPut("perfil/{usuarioId}")]
+        public async Task<IActionResult> ActualizarPerfil(int usuarioId, [FromBody] ActualizarPerfilDTO dto)
+        {
+            try
+            {
+                var usuario = await _usuarioService.ObtenerPorIdAsync(usuarioId);
+                if (usuario == null)
+                    return NotFound(new { mensaje = "Usuario no encontrado" });
+
+                // Actualizar propiedades
+                usuario.Nombre = dto.Nombre;
+                // No actualizamos Email porque es un Value Object y requiere validación
+
+                await _usuarioService.ActualizarPerfilAsync(usuario); // ✅ Este método ahora existe
+
+                return Ok(new { mensaje = "Perfil actualizado correctamente" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Error al actualizar perfil", error = ex.Message });
+            }
+        }
+
+        // ... otros métodos del controller
+    }
+
+    // ✅ DTO para actualizar perfil (si no existe)
+    public class ActualizarPerfilDTO
+    {
+        public string Nombre { get; set; } = string.Empty;
     }
 }

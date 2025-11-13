@@ -6,6 +6,7 @@ import { FaUpload } from "react-icons/fa";
 import DocumentCard from "@/components/Common/DocumentCard";
 import axios from "axios";
 import { API_ROUTES } from "@/lib/apiRoutes";
+import { useSession } from "next-auth/react";
 
 export default function DocumentsPage() {
   interface Document {
@@ -15,24 +16,33 @@ export default function DocumentsPage() {
     date: string;
   }
 
+  const { data: session, status } = useSession(); // ✅ obtener sesión global
   const [documents, setDocuments] = useState<Document[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [clienteId, setClienteId] = useState<number>(1); // temporalmente fijo
 
-  // 🔹 Función para subir archivo al backend
+  // 🔹 Subir archivo al backend con usuarioId y token
   const uploadToBackend = async (file: File) => {
+    if (status !== "authenticated" || !session?.user?.id) {
+      console.error("🚨 No hay sesión activa o usuarioId.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("archivo", file);
-    formData.append("clienteId", clienteId.toString());
+    formData.append("usuarioId", session.user.id); // 👈 se agrega el usuarioId
 
     try {
       setUploading(true);
-      const response = await axios.post(API_ROUTES.UP_DOCUMENT, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+
+      const response = await axios.post(API_ROUTES.UPLOAD_DOCUMENT, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${session.accessToken}`, // 👈 incluye el token JWT
+        },
       });
 
-      console.log("✅ Subido:", response.data);
+      console.log("✅ Documento subido:", response.data);
 
       const newDoc: Document = {
         name: file.name,
@@ -46,14 +56,14 @@ export default function DocumentsPage() {
       };
 
       setDocuments((prev) => [newDoc, ...prev]);
-    } catch (error) {
-      console.error("❌ Error al subir:", error);
+    } catch (error: unknown) {
+      console.error("❌ Error al subir documento:", error);
     } finally {
       setUploading(false);
     }
   };
 
-  // 🔹 Cuando sueltan archivos en el área
+  // 🔹 Manejar arrastrar y soltar
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragActive(false);
@@ -62,7 +72,7 @@ export default function DocumentsPage() {
     for (const file of files) await uploadToBackend(file);
   };
 
-  // 🔹 Cuando seleccionan archivos manualmente
+  // 🔹 Manejar selección manual
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     for (const file of files) await uploadToBackend(file);

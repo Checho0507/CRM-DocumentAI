@@ -3,7 +3,7 @@ import docx
 import email
 from pathlib import Path
 import re
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # ==========================
 # EXTRACCIÓN DE TEXTO

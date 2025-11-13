@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using BCrypt.Net;
 using CRM_DocumentIA.Domain.ValueObjects;
 using CRM_DocumentIA.Server.Application.DTOs.Auth;
@@ -7,7 +8,7 @@ using CRM_DocumentIA.Server.Application.Services;
 using CRM_DocumentIA.Server.Domain.Entities;
 using CRM_DocumentIA.Server.Domain.Interfaces;
 
-namespace CRM_DocumentIA.Application.Services
+namespace CRM_DocumentIA.Server.Application.Services
 {
     public class AutenticacionService
     {
@@ -16,15 +17,18 @@ namespace CRM_DocumentIA.Application.Services
         private readonly SmtpEmailService _smtpEmailService;
 
         public AutenticacionService(
-            IUsuarioRepository userRepository,
+            IUsuarioRepository usuarioRepository,
             JWTService jwtService,
             SmtpEmailService smtpEmailService)
         {
-            _usuarioRepository = userRepository;
+            _usuarioRepository = usuarioRepository;
             _jwtService = jwtService;
             _smtpEmailService = smtpEmailService;
         }
 
+        // ===============================
+        // 🔐 REGISTRO DE USUARIO
+        // ===============================
         public async Task RegistrarUsuarioAsync(RegistroDTO dto)
         {
             var usuarioExistente = await _usuarioRepository.ObtenerPorEmailAsync(dto.Email);
@@ -40,12 +44,15 @@ namespace CRM_DocumentIA.Application.Services
                 "usuario"
             )
             {
-                DobleFactorActivado = dto.DobleFactorActivado // 👈 se guarda el estado 2FA
+                DobleFactorActivado = dto.DobleFactorActivado // Se guarda el estado del 2FA
             };
 
             await _usuarioRepository.AgregarAsync(nuevoUsuario);
         }
 
+        // ===============================
+        // 🔑 LOGIN TRADICIONAL
+        // ===============================
         public async Task<RespuestaAuthDTO> LoginAsync(LoginDTO dto)
         {
             var usuario = await _usuarioRepository.ObtenerPorEmailAsync(dto.Email);
@@ -60,14 +67,17 @@ namespace CRM_DocumentIA.Application.Services
                 Usuario = new UsuarioInfoDTO
                 {
                     Id = usuario.Id,
-                    Email = usuario.Email.Valor,
+                    Email = usuario.Email.Value,
                     Nombre = usuario.Nombre,
                     Rol = usuario.Rol
                 },
-                DobleFactorActivado = usuario.DobleFactorActivado // 👈 se devuelve el estado
+                DobleFactorActivado = usuario.DobleFactorActivado
             };
         }
 
+        // ===============================
+        // 🌐 LOGIN SOCIAL (GOOGLE, ETC.)
+        // ===============================
         public async Task<RespuestaAuthDTO> LoginSocialAsync(LoginSocialDTO dto)
         {
             var usuario = await _usuarioRepository.ObtenerPorEmailAsync(dto.Email);
@@ -84,7 +94,7 @@ namespace CRM_DocumentIA.Application.Services
                     "usuario"
                 )
                 {
-                    DobleFactorActivado = false // 👈 por defecto desactivado
+                    DobleFactorActivado = false // Por defecto desactivado
                 };
 
                 await _usuarioRepository.AgregarAsync(nuevoUsuario);
@@ -99,7 +109,7 @@ namespace CRM_DocumentIA.Application.Services
                 Usuario = new UsuarioInfoDTO
                 {
                     Id = usuario.Id,
-                    Email = usuario.Email.Valor,
+                    Email = usuario.Email.Value,
                     Nombre = usuario.Nombre,
                     Rol = usuario.Rol
                 },
@@ -108,13 +118,15 @@ namespace CRM_DocumentIA.Application.Services
         }
 
         // ===============================
-        // 📩 NUEVA LÓGICA PARA 2FA
+        // 📩 ENVÍO DE CÓDIGO 2FA
         // ===============================
-
         public async Task EnviarCodigo2FAAsync(string email, string codigo)
         {
             var subject = "Código de verificación - CRM DocumentIA";
-            var body = $"<p>Tu código de verificación es: <strong>{codigo}</strong></p><p>Expira en 5 minutos.</p>";
+            var body = $@"
+                <p>Tu código de verificación es: <strong>{codigo}</strong></p>
+                <p>Expira en 5 minutos.</p>
+                <p>Si no solicitaste este código, ignora este mensaje.</p>";
 
             await _smtpEmailService.SendEmailAsync(email, subject, body);
         }

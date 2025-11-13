@@ -1,40 +1,27 @@
-﻿// Domain/ValueObjects/Email.cs
-
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace CRM_DocumentIA.Domain.ValueObjects
 {
-    // Record se usa para ValueObjects por su inmutabilidad y comparación automática
     public record Email
     {
-        public string Valor { get; private set; }
+        private const string EmailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+        
+        public string Value { get; } // ✅ Asegurar que se llama Value
 
-        // Patrón básico para validar formato de correo
-        private static readonly Regex EmailRegex = new Regex(
-            @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-        public Email(string email)
+        public Email(string value)
         {
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                throw new ArgumentException("El email no puede estar vacío.", nameof(email));
-            }
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("El email no puede estar vacío");
 
-            var valorNormalizado = email.Trim().ToLowerInvariant();
+            if (!Regex.IsMatch(value, EmailPattern))
+                throw new ArgumentException("El formato del email no es válido");
 
-            if (!EmailRegex.IsMatch(valorNormalizado))
-            {
-                throw new ArgumentException($"El formato de email '{email}' es inválido.", nameof(email));
-            }
-
-            this.Valor = valorNormalizado;
+            Value = value.ToLowerInvariant();
         }
 
-        // Permite la conversión implícita de Email a string
-        public static implicit operator string(Email email) => email.Valor;
+        public static implicit operator string(Email email) => email.Value;
+        public static explicit operator Email(string value) => new Email(value);
 
-        // Sobrecarga del método ToString()
-        public override string ToString() => Valor;
+        public override string ToString() => Value;
     }
 }

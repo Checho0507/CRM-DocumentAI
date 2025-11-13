@@ -1,4 +1,6 @@
-﻿using CRM_DocumentIA.Server.Domain.Entities;
+﻿// Infrastructure/Database/Configurations/DocumentoConfiguration.cs
+
+using CRM_DocumentIA.Server.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,10 +10,13 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database.Configurations
     {
         public void Configure(EntityTypeBuilder<Documento> builder)
         {
+            // Nombre de la tabla
             builder.ToTable("Documentos");
 
+            // Clave primaria
             builder.HasKey(d => d.Id);
 
+            // Propiedades básicas
             builder.Property(d => d.NombreArchivo)
                 .IsRequired()
                 .HasMaxLength(255);
@@ -25,19 +30,27 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database.Configurations
             builder.Property(d => d.FechaSubida)
                 .HasDefaultValueSql("GETDATE()");
 
-            // 🔹 Configuración para el campo binario del archivo
+            builder.Property(d => d.TamañoArchivo)
+                .IsRequired(false);
+
+            // Campo binario (archivo físico en bytes)
             builder.Property(d => d.ArchivoDocumento)
                 .HasColumnType("varbinary(max)")
                 .IsRequired(false);
 
-            // 🔹 Configuración para el JSON de metadatos
+            // Metadatos JSON opcionales
             builder.Property(d => d.ArchivoMetadataJson)
                 .HasColumnType("nvarchar(max)")
                 .IsRequired(false);
 
-            builder.HasOne(d => d.Cliente)
-                .WithMany(c => c.Documentos)
-                .HasForeignKey(d => d.ClienteId)
+            // Indicador de procesamiento
+            builder.Property(d => d.Procesado)
+                .HasDefaultValue(false);
+
+            // ✅ Relación con Usuario
+            builder.HasOne(d => d.Usuario)
+                .WithMany(u => u.Documentos)
+                .HasForeignKey(d => d.UsuarioId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
         }

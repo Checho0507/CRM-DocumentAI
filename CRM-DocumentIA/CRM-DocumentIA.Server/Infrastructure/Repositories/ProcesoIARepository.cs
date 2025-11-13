@@ -5,40 +5,40 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRM_DocumentIA.Server.Infrastructure.Repositories
 {
-    public class DocumentoRepository : IDocumentoRepository
+    public class ProcesoIARepository : IProcesoIARepository
     {
         private readonly ApplicationDbContext _context;
 
-        public DocumentoRepository(ApplicationDbContext context)
+        public ProcesoIARepository(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        public async Task<IEnumerable<Documento>> ObtenerTodosAsync()
-            => await _context.Documentos.Include(d => d.Cliente).ToListAsync();
+        public async Task<IEnumerable<ProcesoIA>> ObtenerTodosAsync()
+            => await _context.ProcesosIA.Include(p => p.Documento).ToListAsync();
 
-        public async Task<Documento?> ObtenerPorIdAsync(int id)
-            => await _context.Documentos.Include(d => d.Cliente)
-                                        .FirstOrDefaultAsync(d => d.Id == id);
+        public async Task<ProcesoIA?> ObtenerPorIdAsync(int id)
+            => await _context.ProcesosIA.Include(p => p.Documento)
+                                        .FirstOrDefaultAsync(p => p.Id == id);
 
-        public async Task AgregarAsync(Documento documento)
+        public async Task AgregarAsync(ProcesoIA procesoIA)
         {
-            await _context.Documentos.AddAsync(documento);
+            await _context.ProcesosIA.AddAsync(procesoIA);
             await _context.SaveChangesAsync();
         }
 
-        public async Task ActualizarAsync(Documento documento)
+        public async Task ActualizarAsync(ProcesoIA procesoIA)
         {
-            _context.Documentos.Update(documento);
+            _context.ProcesosIA.Update(procesoIA);
             await _context.SaveChangesAsync();
         }
 
         public async Task EliminarAsync(int id)
         {
-            var documento = await _context.Documentos.FindAsync(id);
-            if (documento != null)
+            var proceso = await _context.ProcesosIA.FindAsync(id);
+            if (proceso != null)
             {
-                _context.Documentos.Remove(documento);
+                _context.ProcesosIA.Remove(proceso);
                 await _context.SaveChangesAsync();
             }
         }
