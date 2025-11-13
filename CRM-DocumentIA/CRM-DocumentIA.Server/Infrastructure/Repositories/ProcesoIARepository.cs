@@ -15,11 +15,32 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
         }
 
         public async Task<IEnumerable<ProcesoIA>> ObtenerTodosAsync()
-            => await _context.ProcesosIA.Include(p => p.Documento).ToListAsync();
+            => await _context.ProcesosIA
+                .Include(p => p.Documento)
+                .ThenInclude(d => d.Usuario)
+                .OrderByDescending(p => p.FechaInicio)
+                .ToListAsync();
 
         public async Task<ProcesoIA?> ObtenerPorIdAsync(int id)
-            => await _context.ProcesosIA.Include(p => p.Documento)
-                                        .FirstOrDefaultAsync(p => p.Id == id);
+            => await _context.ProcesosIA
+                .Include(p => p.Documento)
+                .ThenInclude(d => d.Usuario)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+        public async Task<IEnumerable<ProcesoIA>> ObtenerPorDocumentoIdAsync(int documentoId)
+            => await _context.ProcesosIA
+                .Where(p => p.DocumentoId == documentoId)
+                .Include(p => p.Documento)
+                .OrderByDescending(p => p.FechaInicio)
+                .ToListAsync();
+
+        public async Task<IEnumerable<ProcesoIA>> ObtenerPorEstadoAsync(string estado)
+            => await _context.ProcesosIA
+                .Where(p => p.Estado == estado)
+                .Include(p => p.Documento)
+                .ThenInclude(d => d.Usuario)
+                .OrderByDescending(p => p.FechaInicio)
+                .ToListAsync();
 
         public async Task AgregarAsync(ProcesoIA procesoIA)
         {

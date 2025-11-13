@@ -1,6 +1,5 @@
 ﻿using CRM_DocumentIA.Server.Domain.Entities;
 using CRM_DocumentIA.Server.Domain.Interfaces;
-using Microsoft.AspNetCore.Http;
 
 namespace CRM_DocumentIA.Server.Application.Services
 {
@@ -19,9 +18,11 @@ namespace CRM_DocumentIA.Server.Application.Services
         public Task<Documento?> ObtenerPorIdAsync(int id) 
             => _documentoRepository.ObtenerPorIdAsync(id);
 
-        // ✅ NUEVO: Método para obtener documentos por usuario
         public Task<IEnumerable<Documento>> ObtenerPorUsuarioIdAsync(int usuarioId) 
             => _documentoRepository.ObtenerPorUsuarioIdAsync(usuarioId);
+
+        public Task<IEnumerable<Documento>> ObtenerPorEstadoAsync(string estado) 
+            => _documentoRepository.ObtenerPorEstadoAsync(estado);
 
         public Task AgregarAsync(Documento documento) 
             => _documentoRepository.AgregarAsync(documento);
@@ -32,35 +33,87 @@ namespace CRM_DocumentIA.Server.Application.Services
         public Task EliminarAsync(int id) 
             => _documentoRepository.EliminarAsync(id);
 
-        // 🔹 Método actualizado para usar UsuarioId
-        public async Task<Documento> SubirDocumentoAsync(IFormFile archivo, IFormFile? metadataJson, int usuarioId) // ✅ Cambiado a usuarioId
+        // Métodos específicos de negocio
+        public async Task<bool> MarcarComoProcesandoAsync(int documentoId)
+        {
+            var documento = await _documentoRepository.ObtenerPorIdAsync(documentoId);
+            if (documento == null) return false;
+
+            documento.EstadoProcesamiento = "procesando";
+            await _documentoRepository.ActualizarAsync(documento);
+            return true;
+        }
+
+        public async Task<bool> MarcarComoCompletadoAsync(int documentoId, int numeroImagenes, string resumen, string contenidoExtraido, string? metadataJson = null)
+        {
+            var documento = await _documentoRepository.ObtenerPorIdAsync(documentoId);
+            if (documento == null) return false;
+
+            documento.EstadoProcesamiento = "completado";
+            documento.Procesado = true;
+            documento.NumeroImagenes = numeroImagenes;
+            documento.ResumenDocumento = resumen;
+            documento.ContenidoExtraido = contenidoExtraido;
+            documento.FechaProcesamiento = DateTime.UtcNow;
+            
+            if (!string.IsNullOrEmpty(metadataJson))
+            {
+                documento.ArchivoMetadataJson = metadataJson;
+            }
+
+            await _documentoRepository.ActualizarAsync(documento);
+            return true;
+        }
+
+        public async Task<bool> MarcarComoErrorAsync(int documentoId, string error)
+        {
+            var documento = await _documentoRepository.ObtenerPorIdAsync(documentoId);
+            if (documento == null) return false;
+
+            documento.EstadoProcesamiento = "error";
+            documento.ErrorProcesamiento = error;
+            await _documentoRepository.ActualizarAsync(documento);
+            return true;
+        }
+
+        // Método para subir documento con procesamiento inicial
+        public async Task<Documento> SubirDocumentoAsync(IFormFile archivo, int usuarioId, IWebHostEnvironment environment)
         {
             if (archivo == null || archivo.Length == 0)
-                throw new ArgumentException("Debe enviar un archivo válido.");
+                throw new ArgumentException("El archivo no es válido");
 
+            // Convertir archivo a bytes
             byte[] archivoBytes;
-            using (var ms = new MemoryStream())
+            using (var memoryStream = new MemoryStream())
             {
-                await archivo.CopyToAsync(ms);
-                archivoBytes = ms.ToArray();
+                await archivo.CopyToAsync(memoryStream);
+                archivoBytes = memoryStream.ToArray();
             }
 
-            string? jsonContent = null;
-            if (metadataJson != null)
-            {
-                using var reader = new StreamReader(metadataJson.OpenReadStream());
-                jsonContent = await reader.ReadToEndAsync();
-            }
+            // Crear carpeta de uploads si no existe
+            var uploadsFolder = Path.Combine(environment.ContentRootPath, "Uploads");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
 
+            // Generar nombre único para el archivo
+            var fileName = $"{Guid.NewGuid()}_{archivo.FileName}";
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            // Guardar archivo físicamente
+            await System.IO.File.WriteAllBytesAsync(filePath, archivoBytes);
+
+            // Crear entidad Documento
             var documento = new Documento
             {
-                UsuarioId = usuarioId, // ✅ Cambiado a UsuarioId
+                UsuarioId = usuarioId,
                 NombreArchivo = archivo.FileName,
                 TipoDocumento = Path.GetExtension(archivo.FileName),
-                FechaSubida = DateTime.Now,
+                RutaArchivo = filePath,
+                FechaSubida = DateTime.UtcNow,
+                Procesado = false,
                 ArchivoDocumento = archivoBytes,
-                ArchivoMetadataJson = jsonContent,
-                TamañoArchivo = archivo.Length // ✅ Nuevo campo
+                TamañoArchivo = archivo.Length,
+                EstadoProcesamiento = "pendiente"
             };
 
             await _documentoRepository.AgregarAsync(documento);

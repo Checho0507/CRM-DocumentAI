@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRM_DocumentIA.Server.Infrastructure.Repositories
 {
-    public class DocumentoRepository : IDocumentoRepository // ✅ Nombre correcto
+    public class DocumentoRepository : IDocumentoRepository
     {
         private readonly ApplicationDbContext _context;
 
@@ -13,21 +13,33 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
         {
             _context = context;
         }
-        public async Task<IEnumerable<Documento>> ObtenerPorUsuarioIdAsync(int usuarioId)
-    => await _context.Documentos
-        .Where(d => d.UsuarioId == usuarioId)
-        .Include(d => d.Usuario)
-        .ToListAsync();
-        
+
         public async Task<IEnumerable<Documento>> ObtenerTodosAsync()
             => await _context.Documentos
-                .Include(d => d.Usuario) // ✅ Incluir Usuario
+                .Include(d => d.Usuario)
+                .Include(d => d.ProcesosIA)
                 .ToListAsync();
 
         public async Task<Documento?> ObtenerPorIdAsync(int id)
             => await _context.Documentos
-                .Include(d => d.Usuario) // ✅ Incluir Usuario
+                .Include(d => d.Usuario)
+                .Include(d => d.ProcesosIA)
                 .FirstOrDefaultAsync(d => d.Id == id);
+
+        public async Task<IEnumerable<Documento>> ObtenerPorUsuarioIdAsync(int usuarioId)
+            => await _context.Documentos
+                .Where(d => d.UsuarioId == usuarioId)
+                .Include(d => d.Usuario)
+                .Include(d => d.ProcesosIA)
+                .OrderByDescending(d => d.FechaSubida)
+                .ToListAsync();
+
+        public async Task<IEnumerable<Documento>> ObtenerPorEstadoAsync(string estado)
+            => await _context.Documentos
+                .Where(d => d.EstadoProcesamiento == estado)
+                .Include(d => d.Usuario)
+                .Include(d => d.ProcesosIA)
+                .ToListAsync();
 
         public async Task AgregarAsync(Documento documento)
         {

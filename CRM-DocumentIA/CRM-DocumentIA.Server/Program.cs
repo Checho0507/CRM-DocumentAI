@@ -45,7 +45,7 @@ builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IDocumentoRepository, DocumentoRepository>();
 builder.Services.AddScoped<IProcesoIARepository, ProcesoIARepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
-builder.Services.AddScoped<IInsightRepository, InsghtRepository>();
+builder.Services.AddScoped<IInsightRepository, InsightRepository>();
 
 // Servicios
 builder.Services.AddScoped<ClienteService>();

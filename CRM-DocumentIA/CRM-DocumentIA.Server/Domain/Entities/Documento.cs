@@ -9,7 +9,7 @@ public class Documento
     public int Id { get; set; }
 
     [Required]
-    public int UsuarioId { get; set; } // ✅ Cambiado de ClienteId a UsuarioId
+    public int UsuarioId { get; set; }
 
     [Required, MaxLength(255)]
     public string NombreArchivo { get; set; } = string.Empty;
@@ -30,11 +30,27 @@ public class Documento
 
     public string? ArchivoMetadataJson { get; set; }
 
-    public long? TamañoArchivo { get; set; } // ✅ Nuevo campo para tamaño
+    public long? TamañoArchivo { get; set; }
+
+    // ✅ NUEVOS CAMPOS PARA EL PROCESAMIENTO IA
+    public int? NumeroImagenes { get; set; }
+    
+    [Column(TypeName = "nvarchar(max)")]
+    public string? ResumenDocumento { get; set; }
+    
+    [Required, MaxLength(50)]
+    public string EstadoProcesamiento { get; set; } = "pendiente"; // "pendiente", "procesando", "completado", "error"
+    
+    public DateTime? FechaProcesamiento { get; set; }
+    
+    [MaxLength(1000)]
+    public string? UrlServicioIA { get; set; }
+
+    public string? ErrorProcesamiento { get; set; }
 
     // Relaciones
     [ForeignKey("UsuarioId")]
-    public virtual Usuario Usuario { get; set; } = null!; // ✅ Cambiado de Cliente a Usuario
+    public virtual Usuario Usuario { get; set; } = null!;
 
     public virtual ICollection<ProcesoIA> ProcesosIA { get; set; } = new List<ProcesoIA>();
     public virtual ICollection<Insight> Insights { get; set; } = new List<Insight>();
