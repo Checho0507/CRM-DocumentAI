@@ -1,7 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+// Controllers/UsuarioController.cs
 using CRM_DocumentIA.Server.Domain.Entities;
+using CRM_DocumentIA.Server.Application.DTOs.Usuario;
 using CRM_DocumentIA.Server.Application.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace CRM_DocumentIA.Server.Controllers
 {
@@ -71,4 +75,16 @@ namespace CRM_DocumentIA.Server.Controllers
     {
         public string Nombre { get; set; } = string.Empty;
     }
+
+    [HttpPost("asignar-rol")]
+	[Authorize(Roles = "admin")]
+    public async Task<IActionResult> AsignarRol([FromBody] AsignarRolDTO dto)
+    {
+    	var resultado = await _servicioUsuario.AsignarRolAsync(dto.UsuarioId, dto.RolId);
+
+        if (!resultado)
+        	return BadRequest("No se pudo asignar el rol. Verifique el usuario y el rol.");
+
+		return Ok(new { mensaje = "Rol asignado correctamente" });
+	}
 }

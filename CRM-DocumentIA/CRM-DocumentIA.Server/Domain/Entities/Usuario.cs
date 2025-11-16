@@ -5,12 +5,12 @@ namespace CRM_DocumentIA.Server.Domain.Entities;
 
 public class Usuario
 {
-    public Usuario(Email email, string nombre, string passwordHash, string rol)
+    public Usuario(Email email, string nombre, string passwordHash, int rolId)
     {
         Email = email;
         Nombre = nombre;
         PasswordHash = passwordHash;
-        Rol = rol;
+        RolId = rolId;
     }
 
     // Constructor vacío para EF Core
@@ -22,11 +22,13 @@ public class Usuario
     public Email Email { get; set; } = null!;
 
     public string PasswordHash { get; set; } = string.Empty;
-    public string Rol { get; set; } = "usuario";
+
+    public int RolId { get; set; }
+    public Rol Rol { get; set; } = null!; 
+    
     public bool DobleFactorActivado { get; internal set; }
 
     // ✅ Agregar la relación inversa con Documento
     public virtual ICollection<Documento> Documentos { get; set; } = new List<Documento>();
 
-    // ... (otras propiedades que ya tengas)
 }

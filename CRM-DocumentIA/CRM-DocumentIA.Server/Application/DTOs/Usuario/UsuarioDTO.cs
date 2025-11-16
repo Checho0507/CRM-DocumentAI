@@ -8,7 +8,8 @@ namespace CRM_DocumentIA.Server.Application.DTOs.Usuario
         public int Id { get; set; }
         public string Nombre { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
-        public string Rol { get; set; } = string.Empty;
+        public int RolId { get; set; }
+        public string RolNombre { get; set; } = string.Empty;
         public bool DobleFactorActivado { get; set; }
     }
 
@@ -16,6 +17,6 @@ namespace CRM_DocumentIA.Server.Application.DTOs.Usuario
     public class ActualizacionUsuarioDTO
     {
         public string Nombre { get; set; } = string.Empty;
-        public bool? DobleFactorActivado { get; set; } // 👈 opcional
+        public bool? DobleFactorActivado { get; set; }
     }
 }

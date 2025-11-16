@@ -41,7 +41,7 @@ namespace CRM_DocumentIA.Server.Application.Services
                 new Email(dto.Email),
                 dto.Nombre,
                 passwordHash,
-                "usuario"
+                1
             )
             {
                 DobleFactorActivado = dto.DobleFactorActivado // Se guarda el estado del 2FA
@@ -69,7 +69,8 @@ namespace CRM_DocumentIA.Server.Application.Services
                     Id = usuario.Id,
                     Email = usuario.Email.Value,
                     Nombre = usuario.Nombre,
-                    Rol = usuario.Rol
+                    RolId = usuario.Rol.Id,
+                    RolNombre = usuario.Rol.Nombre,
                 },
                 DobleFactorActivado = usuario.DobleFactorActivado
             };
@@ -91,7 +92,7 @@ namespace CRM_DocumentIA.Server.Application.Services
                     emailVo,
                     dto.Name,
                     passwordDummyHash,
-                    "usuario"
+                    1
                 )
                 {
                     DobleFactorActivado = false // Por defecto desactivado
@@ -111,7 +112,8 @@ namespace CRM_DocumentIA.Server.Application.Services
                     Id = usuario.Id,
                     Email = usuario.Email.Value,
                     Nombre = usuario.Nombre,
-                    Rol = usuario.Rol
+                    RolId = usuario.Rol.Id,
+                    RolNombre = usuario.Rol.Nombre,
                 },
                 DobleFactorActivado = usuario.DobleFactorActivado
             };

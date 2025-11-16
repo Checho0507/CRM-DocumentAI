@@ -1,7 +1,5 @@
 ﻿using System.Text;
 using CRM_DocumentIA.Server.Application.Services;
-using CRM_DocumentIA.Server.Infrastructure.Repositories;
-using CRM_DocumentIA.Server;
 using CRM_DocumentIA.Server.Domain.Entities;
 using CRM_DocumentIA.Server.Domain.Interfaces;
 using CRM_DocumentIA.Server.Infrastructure.Database;
@@ -9,7 +7,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +24,8 @@ builder.Services.AddCors(options =>
         });
 });
 
-// Servicios de Email
+builder.Services.AddSingleton<SmtpEmailService, SmtpEmailService>();
+
 builder.Services.AddScoped<JWTService>();
 builder.Services.AddScoped<TwoFactorService, TwoFactorService>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
@@ -41,24 +39,27 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 });
 
 // Repositorios
-builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IDocumentoRepository, DocumentoRepository>();
 builder.Services.AddScoped<IProcesoIARepository, ProcesoIARepository>();
+builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
-builder.Services.AddScoped<IInsightRepository, InsightRepository>();
+builder.Services.AddScoped<IInsightRepository, InsghtRepository>();
+builder.Services.AddScoped<IRolRepository, RolRepository>();
+
 
 // 🔥 AGREGAR HTTPCLIENT PARA PROCESOIASERVICE
 builder.Services.AddHttpClient<ProcesoIAService>();
 
 // Servicios
-builder.Services.AddScoped<ClienteService>();
 builder.Services.AddScoped<DocumentoService>();
 builder.Services.AddScoped<ProcesoIAService>();
+builder.Services.AddScoped<ClienteService>();
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<InsightService>();
 builder.Services.AddScoped<JWTService>();
+builder.Services.AddScoped<RolService>();
 
-// 2. Configuración de JWT Bearer
+// 2. Configuración de JWT Bearer (CRUCIAL)
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

@@ -1,5 +1,8 @@
 ﻿using CRM_DocumentIA.Server.Domain.Entities;
 using CRM_DocumentIA.Server.Domain.Interfaces;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 
 namespace CRM_DocumentIA.Server.Application.Services
 {
@@ -51,6 +54,13 @@ namespace CRM_DocumentIA.Server.Application.Services
         public async Task ActualizarPerfilAsync(Usuario usuario)
         {
             await _usuarioRepository.ActualizarAsync(usuario);
+        }
+
+
+        public async Task<bool> AsignarRolAsync(int usuarioId, int rolId)
+        {
+            // Opcional: puedes verificar si el rol existe usando IRolRepository
+            return await _repositorioUsuario.AsignarRolAsync(usuarioId, rolId);
         }
     }
 }

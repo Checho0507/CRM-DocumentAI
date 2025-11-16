@@ -7,7 +7,8 @@
         public int Id { get; set; }
         public string Email { get; set; } = string.Empty;
         public string Nombre { get; set; } = string.Empty;
-        public string Rol { get; set; } = string.Empty;
+        public int RolId { get; set; }
+        public string RolNombre { get; set; } = string.Empty;
     }
 
     // DTO de respuesta final de login

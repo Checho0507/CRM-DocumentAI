@@ -1,5 +1,5 @@
 ﻿using CRM_DocumentIA.Server.Domain.Entities;
-
+using System.Threading.Tasks;
 namespace CRM_DocumentIA.Server.Domain.Interfaces
 {
     public interface IUsuarioRepository
@@ -10,5 +10,7 @@ namespace CRM_DocumentIA.Server.Domain.Interfaces
         Task AgregarAsync(Usuario usuario);
         Task ActualizarAsync(Usuario usuario);
         Task EliminarAsync(int id);
+        Task<Usuario?> ObtenerPorEmailAsync(string email);
+        Task<bool> AsignarRolAsync(int usuarioId, int rolId);
     }
 }

@@ -2,6 +2,7 @@
 using CRM_DocumentIA.Server.Domain.Interfaces;
 using CRM_DocumentIA.Server.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace CRM_DocumentIA.Server.Infrastructure.Repositories
 {
@@ -44,6 +45,18 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
                 _context.Usuarios.Remove(usuario);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<bool> AsignarRolAsync(int usuarioId, int rolId)
+        {
+            var usuario = await _context.Usuarios.FindAsync(usuarioId);
+            if (usuario == null)
+                return false;
+
+            usuario.RolId = rolId;
+
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }
