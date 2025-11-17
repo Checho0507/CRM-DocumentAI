@@ -60,7 +60,7 @@ namespace CRM_DocumentIA.Server.Application.Services
         public async Task<bool> AsignarRolAsync(int usuarioId, int rolId)
         {
             // Opcional: puedes verificar si el rol existe usando IRolRepository
-            return await _repositorioUsuario.AsignarRolAsync(usuarioId, rolId);
+            return await _usuarioRepository.AsignarRolAsync(usuarioId, rolId);
         }
     }
 }

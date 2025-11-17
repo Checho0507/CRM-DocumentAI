@@ -1,4 +1,4 @@
-// Domain/Entities/Roles.cs (Actualización)
+using CRM_DocumentIA.Server.Domain.Entities;
 
 public class Rol
 {

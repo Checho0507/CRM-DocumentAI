@@ -1,8 +1,8 @@
-﻿using CRM_DocumentIA.Server.Domain.Entities;
+﻿using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using CRM_DocumentIA.Server.Domain.Entities;
 using CRM_DocumentIA.Server.Domain.Interfaces;
 using CRM_DocumentIA.Server.Infrastructure.Database;
-using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 
 namespace CRM_DocumentIA.Server.Infrastructure.Repositories
 {

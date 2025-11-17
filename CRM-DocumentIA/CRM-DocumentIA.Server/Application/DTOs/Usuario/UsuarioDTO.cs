@@ -19,4 +19,11 @@ namespace CRM_DocumentIA.Server.Application.DTOs.Usuario
         public string Nombre { get; set; } = string.Empty;
         public bool? DobleFactorActivado { get; set; }
     }
+
+
+    // ✅ DTO para actualizar perfil (si no existe)
+    public class ActualizarPerfilDTO
+    {
+        public string Nombre { get; set; } = string.Empty;
+    }
 }

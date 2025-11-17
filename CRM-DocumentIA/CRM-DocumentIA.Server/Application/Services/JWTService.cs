@@ -1,8 +1,8 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using System.Text;
 using System.Security.Claims;
-using System.Text;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.Extensions.Configuration;
 using CRM_DocumentIA.Server.Domain.Entities;
 
 namespace CRM_DocumentIA.Server.Application.Services
@@ -28,7 +28,7 @@ namespace CRM_DocumentIA.Server.Application.Services
             {
                 new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
                 new Claim(ClaimTypes.Email, usuario.Email.Value), // ✅ Cambiado a .Value
-                new Claim(ClaimTypes.Role, usuario.Rol),
+                new Claim(ClaimTypes.Role, usuario.Rol.Nombre),
                 new Claim(ClaimTypes.Name, usuario.Nombre)
             };
 

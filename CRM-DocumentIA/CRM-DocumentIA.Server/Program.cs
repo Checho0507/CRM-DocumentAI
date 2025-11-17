@@ -1,12 +1,15 @@
 ﻿using System.Text;
-using CRM_DocumentIA.Server.Application.Services;
-using CRM_DocumentIA.Server.Domain.Entities;
-using CRM_DocumentIA.Server.Domain.Interfaces;
-using CRM_DocumentIA.Server.Infrastructure.Database;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using CRM_DocumentIA.Server.Domain.Entities;
+using CRM_DocumentIA.Server.Domain.Interfaces;
+using CRM_DocumentIA.Server.Application.Services;
+using CRM_DocumentIA.Server.Infrastructure.Database;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using CRM_DocumentIA.Server.Infrastructure.Repositories;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,7 +46,7 @@ builder.Services.AddScoped<IDocumentoRepository, DocumentoRepository>();
 builder.Services.AddScoped<IProcesoIARepository, ProcesoIARepository>();
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
-builder.Services.AddScoped<IInsightRepository, InsghtRepository>();
+builder.Services.AddScoped<InsightRepository, InsightRepository>();
 builder.Services.AddScoped<IRolRepository, RolRepository>();
 
 
@@ -97,9 +100,6 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
         Description = "API para CRM DocumentIA - Compatible con Linux"
     });
-
-    // Agregar el filtro para manejar IFormFile en Linux
-    c.OperationFilter<SwaggerFileOperationFilter>();
 
     // ✅ SOLO ESTAS 2 LÍNEAS NUEVAS:
     c.MapType<IFormFile>(() => new OpenApiSchema { Type = "string", Format = "binary" });

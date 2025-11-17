@@ -67,24 +67,16 @@ namespace CRM_DocumentIA.Server.Controllers
             }
         }
 
-        // ... otros métodos del controller
-    }
+        [HttpPost("asignar-rol")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> AsignarRol([FromBody] AsignarRolDTO dto)
+        {
+            var resultado = await _usuarioService.AsignarRolAsync(dto.UsuarioId, dto.RolId);
 
-    // ✅ DTO para actualizar perfil (si no existe)
-    public class ActualizarPerfilDTO
-    {
-        public string Nombre { get; set; } = string.Empty;
-    }
+            if (!resultado)
+                return BadRequest("No se pudo asignar el rol. Verifique el usuario y el rol.");
 
-    [HttpPost("asignar-rol")]
-	[Authorize(Roles = "admin")]
-    public async Task<IActionResult> AsignarRol([FromBody] AsignarRolDTO dto)
-    {
-    	var resultado = await _servicioUsuario.AsignarRolAsync(dto.UsuarioId, dto.RolId);
-
-        if (!resultado)
-        	return BadRequest("No se pudo asignar el rol. Verifique el usuario y el rol.");
-
-		return Ok(new { mensaje = "Rol asignado correctamente" });
-	}
+            return Ok(new { mensaje = "Rol asignado correctamente" });
+        }
+    }    
 }
