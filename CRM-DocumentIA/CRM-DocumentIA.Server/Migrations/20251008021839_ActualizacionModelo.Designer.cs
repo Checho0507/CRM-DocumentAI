@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CRM_DocumentIA.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251015223915_Bd_CRM_DocumentIA")]
-    partial class Bd_CRM_DocumentIA
+    [Migration("20251008021839_ActualizacionModelo")]
+    partial class ActualizacionModelo
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -106,41 +106,6 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.ToTable("Documentos", (string)null);
                 });
 
-            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Insight", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("ClienteId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Contenido")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("DocumentoId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("GeneradoEn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Tipo")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClienteId");
-
-                    b.HasIndex("DocumentoId");
-
-                    b.ToTable("Insights", (string)null);
-                });
-
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.ProcesoIA", b =>
                 {
                     b.Property<int>("Id")
@@ -179,102 +144,15 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.ToTable("ProcesosIA", (string)null);
                 });
 
-            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.TwoFA", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Attempts")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CodeHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UsuarioId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Verified")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TwoFA");
-                });
-
-            modelBuilder.Entity("Usuario", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("DobleFactorActivado")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("Rol")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("usuario");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.ToTable("Usuarios", (string)null);
-                });
-
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Documento", b =>
                 {
                     b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Cliente", "Cliente")
                         .WithMany("Documentos")
                         .HasForeignKey("ClienteId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Cliente");
-                });
-
-            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Insight", b =>
-                {
-                    b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Cliente", "Cliente")
-                        .WithMany("Insights")
-                        .HasForeignKey("ClienteId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Documento", "Documento")
-                        .WithMany("Insights")
-                        .HasForeignKey("DocumentoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Cliente");
-
-                    b.Navigation("Documento");
                 });
 
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.ProcesoIA", b =>
@@ -291,14 +169,10 @@ namespace CRM_DocumentIA.Server.Migrations
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Cliente", b =>
                 {
                     b.Navigation("Documentos");
-
-                    b.Navigation("Insights");
                 });
 
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Documento", b =>
                 {
-                    b.Navigation("Insights");
-
                     b.Navigation("ProcesosIA");
                 });
 #pragma warning restore 612, 618

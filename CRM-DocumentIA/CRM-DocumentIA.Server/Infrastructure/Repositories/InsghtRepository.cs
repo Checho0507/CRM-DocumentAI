@@ -63,14 +63,10 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task EliminarAsync(int id)
+        public async Task EliminarAsync(Insight insight)
         {
-            var insight = await _context.Insights.FindAsync(id);
-            if (insight != null)
-            {
-                _context.Insights.Remove(insight);
-                await _context.SaveChangesAsync();
-            }
+            _context.Insights.Remove(insight);
+            await _context.SaveChangesAsync();
         }
     }
 }

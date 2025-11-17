@@ -38,11 +38,11 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database.Configurations
             builder.Property(p => p.TiempoProcesamientoSegundos)
                 .IsRequired(false);
 
-            // Relación con Documento
+            // Relación con Documento - CAMBIAR A Restrict
             builder.HasOne(p => p.Documento)
                 .WithMany(d => d.ProcesosIA)
                 .HasForeignKey(p => p.DocumentoId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.Restrict)  // ← CAMBIADO DE Cascade A Restrict
                 .IsRequired();
 
             // Índices para mejor performance

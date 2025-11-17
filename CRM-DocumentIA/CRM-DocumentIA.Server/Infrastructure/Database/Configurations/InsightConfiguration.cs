@@ -27,18 +27,18 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database.Configurations
             builder.Property(i => i.FechaGeneracion)
                 .HasDefaultValueSql("GETDATE()");
 
-            // Relación con Documento
+            // Relación con Documento - CAMBIAR A Restrict
             builder.HasOne(i => i.Documento)
                 .WithMany(d => d.Insights)
                 .HasForeignKey(i => i.DocumentoId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.Restrict)  // ← CAMBIADO DE Cascade A Restrict
                 .IsRequired();
 
-            // Relación con ProcesoIA (opcional)
+            // Relación con ProcesoIA - CAMBIAR A Restrict
             builder.HasOne(i => i.ProcesoIA)
                 .WithMany()
                 .HasForeignKey(i => i.ProcesoIAId)
-                .OnDelete(DeleteBehavior.SetNull)
+                .OnDelete(DeleteBehavior.Restrict)  // ← CAMBIADO DE SetNull A Restrict
                 .IsRequired(false);
 
             // Índices para mejor performance

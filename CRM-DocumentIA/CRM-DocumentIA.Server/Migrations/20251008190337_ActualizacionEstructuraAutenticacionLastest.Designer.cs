@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CRM_DocumentIA.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251014025841_InitialMigrations")]
-    partial class InitialMigrations
+    [Migration("20251008190337_ActualizacionEstructuraAutenticacionLastest")]
+    partial class ActualizacionEstructuraAutenticacionLastest
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -177,36 +177,6 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.HasIndex("DocumentoId");
 
                     b.ToTable("ProcesosIA", (string)null);
-                });
-
-            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.TwoFA", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Attempts")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CodeHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UsuarioId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Verified")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TwoFA");
                 });
 
             modelBuilder.Entity("Usuario", b =>
