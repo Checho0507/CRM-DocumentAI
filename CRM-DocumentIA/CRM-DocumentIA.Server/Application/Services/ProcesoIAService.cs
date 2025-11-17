@@ -114,6 +114,65 @@ namespace CRM_DocumentIA.Server.Application.Services
             return true;
         }
 
+        public async Task<ResultadoInsightRAG> GenerarInsightAsync(int documentoId, string pregunta)
+        {
+            try
+            {
+                // Aquí integras con tu servicio RAG externo
+                var requestData = new
+                {
+                    documento_id = documentoId,
+                    pregunta = pregunta,
+                    tipo_consulta = "insight"
+                };
+
+                var json = JsonSerializer.Serialize(requestData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync("generar-insight", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseJson = await response.Content.ReadAsStringAsync();
+                    var resultado = JsonSerializer.Deserialize<ResultadoInsightRAG>(responseJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return resultado ?? new ResultadoInsightRAG
+                    {
+                        Exito = false,
+                        Error = "Respuesta inválida del servicio RAG"
+                    };
+                }
+                else
+                {
+                    return new ResultadoInsightRAG
+                    {
+                        Exito = false,
+                        Error = $"Error del servicio RAG: {response.StatusCode}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ResultadoInsightRAG
+                {
+                    Exito = false,
+                    Error = $"Error de conexión al servicio RAG: {ex.Message}"
+                };
+            }
+        }
+
+        public class ResultadoInsightRAG
+        {
+            public bool Exito { get; set; }
+            public string Respuesta { get; set; } = string.Empty;
+            public double Confianza { get; set; }
+            public int? ProcesoIAId { get; set; }
+            public string Error { get; set; } = string.Empty;
+        }
+
         // ✅ MÉTODO PARA PROCESAR DOCUMENTO CON SERVICIO IA EXTERNO
         public async Task<ProcesamientoIADto> ProcesarDocumentoAsync(byte[] archivoBytes, string nombreArchivo)
         {

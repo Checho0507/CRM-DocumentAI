@@ -24,7 +24,6 @@ public class Documento
 
     public bool Procesado { get; set; } = false;
 
-    public string? ContenidoExtraido { get; set; }
 
     public byte[]? ArchivoDocumento { get; set; }
 

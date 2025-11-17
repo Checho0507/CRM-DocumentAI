@@ -44,7 +44,7 @@ namespace CRM_DocumentIA.Server.Application.Services
             return true;
         }
 
-        public async Task<bool> MarcarComoCompletadoAsync(int documentoId, int numeroImagenes, string resumen, string contenidoExtraido, string? metadataJson = null)
+        public async Task<bool> MarcarComoCompletadoAsync(int documentoId, int numeroImagenes, string resumen, string? metadataJson = null)
         {
             var documento = await _documentoRepository.ObtenerPorIdAsync(documentoId);
             if (documento == null) return false;
@@ -53,7 +53,6 @@ namespace CRM_DocumentIA.Server.Application.Services
             documento.Procesado = true;
             documento.NumeroImagenes = numeroImagenes;
             documento.ResumenDocumento = resumen;
-            documento.ContenidoExtraido = contenidoExtraido;
             documento.FechaProcesamiento = DateTime.UtcNow;
             
             if (!string.IsNullOrEmpty(metadataJson))

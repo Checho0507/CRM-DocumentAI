@@ -11,6 +11,6 @@ namespace CRM_DocumentIA.Server.Domain.Interfaces
         Task<IEnumerable<Insight>> ObtenerPorProcesoIAIdAsync(int procesoIAId);
         Task AgregarAsync(Insight insight);
         Task ActualizarAsync(Insight insight);
-        Task EliminarAsync(int id);
+        Task EliminarAsync(Insight insight);
     }
 }

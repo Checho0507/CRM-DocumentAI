@@ -47,6 +47,9 @@ builder.Services.AddScoped<IProcesoIARepository, ProcesoIARepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IInsightRepository, InsightRepository>();
 
+// 🔥 AGREGAR HTTPCLIENT PARA PROCESOIASERVICE
+builder.Services.AddHttpClient<ProcesoIAService>();
+
 // Servicios
 builder.Services.AddScoped<ClienteService>();
 builder.Services.AddScoped<DocumentoService>();
@@ -87,20 +90,20 @@ builder.Services.AddEndpointsApiExplorer();
 // 3. CONFIGURACIÓN SWAGGER PARA LINUX
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo 
-    { 
-        Title = "CRM DocumentIA API", 
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "CRM DocumentIA API",
         Version = "v1",
         Description = "API para CRM DocumentIA - Compatible con Linux"
     });
-    
+
     // Agregar el filtro para manejar IFormFile en Linux
     c.OperationFilter<SwaggerFileOperationFilter>();
-    
+
     // ✅ SOLO ESTAS 2 LÍNEAS NUEVAS:
     c.MapType<IFormFile>(() => new OpenApiSchema { Type = "string", Format = "binary" });
     c.MapType<IFormFileCollection>(() => new OpenApiSchema { Type = "string", Format = "binary" });
-    
+
     // Configuración de seguridad JWT
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -110,7 +113,7 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
-    
+
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {

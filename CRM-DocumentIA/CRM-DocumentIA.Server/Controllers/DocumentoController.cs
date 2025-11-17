@@ -104,7 +104,6 @@ namespace CRM_DocumentIA.Server.Controllers
                         documento.Id,
                         resultadoIA.NumeroImagenes,
                         resultadoIA.Resumen,
-                        resultadoIA.ContenidoExtraido,
                         resultadoIA.MetadataAdicionalJson
                     );
 
@@ -113,7 +112,6 @@ namespace CRM_DocumentIA.Server.Controllers
                     {
                         numeroImagenes = resultadoIA.NumeroImagenes,
                         resumen = resultadoIA.Resumen,
-                        contenidoExtraido = resultadoIA.ContenidoExtraido,
                         metadata = resultadoIA.MetadataAdicional
                     });
 

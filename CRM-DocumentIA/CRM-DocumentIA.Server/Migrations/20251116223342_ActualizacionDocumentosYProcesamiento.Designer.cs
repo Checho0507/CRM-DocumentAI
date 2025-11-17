@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CRM_DocumentIA.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251027165448_DocumentsCharge")]
-    partial class DocumentsCharge
+    [Migration("20251116223342_ActualizacionDocumentosYProcesamiento")]
+    partial class ActualizacionDocumentosYProcesamiento
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -72,11 +72,31 @@ namespace CRM_DocumentIA.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ClienteId")
+                    b.Property<byte[]>("ArchivoDocumento")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("ArchivoMetadataJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ClienteId")
                         .HasColumnType("int");
 
                     b.Property<string>("ContenidoExtraido")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ErrorProcesamiento")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("EstadoProcesamiento")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("pendiente");
+
+                    b.Property<DateTime?>("FechaProcesamiento")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FechaSubida")
                         .ValueGeneratedOnAdd()
@@ -88,20 +108,38 @@ namespace CRM_DocumentIA.Server.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<int?>("NumeroImagenes")
+                        .HasColumnType("int");
+
                     b.Property<bool>("Procesado")
                         .HasColumnType("bit");
+
+                    b.Property<string>("ResumenDocumento")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("RutaArchivo")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<long?>("TamañoArchivo")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("TipoDocumento")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("UrlServicioIA")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClienteId");
+
+                    b.HasIndex("UsuarioId");
 
                     b.ToTable("Documentos", (string)null);
                 });
@@ -117,6 +155,9 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.Property<int?>("ClienteId")
                         .HasColumnType("int");
 
+                    b.Property<double?>("Confianza")
+                        .HasColumnType("float");
+
                     b.Property<string>("Contenido")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -124,19 +165,32 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.Property<int>("DocumentoId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("GeneradoEn")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTime>("FechaGeneracion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
 
-                    b.Property<string>("Tipo")
+                    b.Property<int?>("ProcesoIAId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TipoInsight")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasDefaultValue("general");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ClienteId");
 
                     b.HasIndex("DocumentoId");
+
+                    b.HasIndex("FechaGeneracion");
+
+                    b.HasIndex("ProcesoIAId");
+
+                    b.HasIndex("TipoInsight");
 
                     b.ToTable("Insights", (string)null);
                 });
@@ -152,29 +206,49 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.Property<int>("DocumentoId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Error")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("Estado")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("pendiente");
 
                     b.Property<DateTime?>("FechaFin")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("FechaInicio")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTime>("FechaInicio")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
 
-                    b.Property<string>("Resultado")
+                    b.Property<string>("ResultadoJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double?>("TiempoProcesamientoSegundos")
+                        .HasColumnType("float");
+
+                    b.Property<string>("TipoProcesamiento")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasDefaultValue("analisis_documento");
+
+                    b.Property<string>("UrlServicio")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("TipoProceso")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DocumentoId");
+
+                    b.HasIndex("Estado");
+
+                    b.HasIndex("FechaInicio");
 
                     b.ToTable("ProcesosIA", (string)null);
                 });
@@ -209,7 +283,7 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.ToTable("TwoFA");
                 });
 
-            modelBuilder.Entity("Usuario", b =>
+            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Usuario", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -218,53 +292,52 @@ namespace CRM_DocumentIA.Server.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("DobleFactorActivado")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Rol")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
                         .HasDefaultValue("usuario");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
 
                     b.ToTable("Usuarios", (string)null);
                 });
 
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Documento", b =>
                 {
-                    b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Cliente", "Cliente")
+                    b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Cliente", null)
                         .WithMany("Documentos")
-                        .HasForeignKey("ClienteId")
+                        .HasForeignKey("ClienteId");
+
+                    b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Usuario", "Usuario")
+                        .WithMany("Documentos")
+                        .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Cliente");
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Insight", b =>
                 {
-                    b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Cliente", "Cliente")
+                    b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Cliente", null)
                         .WithMany("Insights")
-                        .HasForeignKey("ClienteId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("ClienteId");
 
                     b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Documento", "Documento")
                         .WithMany("Insights")
@@ -272,9 +345,14 @@ namespace CRM_DocumentIA.Server.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Cliente");
+                    b.HasOne("CRM_DocumentIA.Server.Domain.Entities.ProcesoIA", "ProcesoIA")
+                        .WithMany()
+                        .HasForeignKey("ProcesoIAId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Documento");
+
+                    b.Navigation("ProcesoIA");
                 });
 
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.ProcesoIA", b =>
@@ -282,10 +360,35 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Documento", "Documento")
                         .WithMany("ProcesosIA")
                         .HasForeignKey("DocumentoId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Documento");
+                });
+
+            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Usuario", b =>
+                {
+                    b.OwnsOne("CRM_DocumentIA.Domain.ValueObjects.Email", "Email", b1 =>
+                        {
+                            b1.Property<int>("UsuarioId")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(255)
+                                .HasColumnType("nvarchar(255)")
+                                .HasColumnName("Email");
+
+                            b1.HasKey("UsuarioId");
+
+                            b1.ToTable("Usuarios");
+
+                            b1.WithOwner()
+                                .HasForeignKey("UsuarioId");
+                        });
+
+                    b.Navigation("Email")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Cliente", b =>
@@ -300,6 +403,11 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.Navigation("Insights");
 
                     b.Navigation("ProcesosIA");
+                });
+
+            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Usuario", b =>
+                {
+                    b.Navigation("Documentos");
                 });
 #pragma warning restore 612, 618
         }
