@@ -46,7 +46,7 @@ builder.Services.AddScoped<IDocumentoRepository, DocumentoRepository>();
 builder.Services.AddScoped<IProcesoIARepository, ProcesoIARepository>();
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
-builder.Services.AddScoped<InsightRepository, InsightRepository>();
+builder.Services.AddScoped<IInsightRepository, InsightRepository>();
 builder.Services.AddScoped<IRolRepository, RolRepository>();
 
 
