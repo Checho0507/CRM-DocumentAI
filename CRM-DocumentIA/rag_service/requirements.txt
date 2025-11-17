@@ -18,3 +18,4 @@ scikit-learn
 langchain-community
 langchain-core
 pypdf
+pymupdf

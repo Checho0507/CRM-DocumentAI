@@ -9,7 +9,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from rag_pipeline import ingest_file_to_pinecone, answer_question
-from ingest_utils import extract_text
+from ingest_utils import extract_text, detect_document_type
 
 # ==========================
 # CONFIGURACIÓN INICIAL
@@ -22,15 +22,15 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 app = FastAPI(
     title="CRM RAG Service",
     description="Servicio RAG inteligente para CRM: contratos, correos, facturas, PQRS y propuestas.",
-    version="2.0.0"
+    version="2.1.0"
 )
 
 # ==========================
-# CORS (para conexión con backend .NET)
+# CORS
 # ==========================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # puedes restringir a ["http://localhost:4200"] o tu dominio backend
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,7 +41,7 @@ app.add_middleware(
 # ==========================
 class Question(BaseModel):
     query: str
-    doc_type: str | None = None  # permite filtrar búsquedas específicas
+    doc_type: str | None = None  # filtro opcional
 
 class Feedback(BaseModel):
     question: str
@@ -51,13 +51,14 @@ class Feedback(BaseModel):
     comment: str | None = None
 
 # ==========================
-# ENDPOINTS PRINCIPALES
+# ENDPOINTS
 # ==========================
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "message": "CRM RAG Service funcionando correctamente."}
 
-# ---------- INGESTA DE DOCUMENTOS ----------
+# ---------- INGESTA ----------
 @app.post("/upload")
 async def upload_document(file: UploadFile = File(...), source_name: str = Form("upload")):
     """Sube e indexa un documento en Pinecone."""
@@ -72,49 +73,55 @@ async def upload_document(file: UploadFile = File(...), source_name: str = Form(
 @app.post("/query")
 async def query_rag(q: Question):
     """
-    Endpoint para consultar el sistema RAG.
-    - Detecta tipo de documento automáticamente si no se pasa 'doc_type'.
-    - Devuelve respuesta razonada, fuentes y diagnóstico.
+    Consulta al RAG.
+    - Si el usuario envía doc_type → se usa como filtro.
+    - Si no, el pipeline detecta el tipo automáticamente.
     """
     start = time.time()
+
     result = answer_question(q.query, top_k=10)
+
     elapsed = round(time.time() - start, 2)
+
     return {
         "query": q.query,
-        "doc_type": q.doc_type,
-        "response": result["answer"],
-        "sources": result["sources"],
-        "diagnostics": result["diagnostics"],
+        "input_doc_type": q.doc_type,
+        "detected_doc_type": result.get("doc_type_detected"),
+        "response": result.get("answer"),
+        "sources": result.get("sources", []),
+        "compressed_context": result.get("compressed", []),
         "elapsed_seconds": elapsed
     }
 
-# ---------- FEEDBACK (para mejorar modelo) ----------
+# ---------- FEEDBACK ----------
 FEEDBACK_LOG = Path("feedback_log.json")
 
 @app.post("/feedback")
 async def feedback(data: Feedback):
-    """
-    Guarda feedback sobre las respuestas generadas.
-    Esto se puede usar luego para reentrenar prompts o mejorar embeddings.
-    """
+    """Guarda feedback del usuario."""
     record = data.dict()
     record["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+
     previous = []
     if FEEDBACK_LOG.exists():
         try:
             previous = json.loads(FEEDBACK_LOG.read_text())
-        except Exception:
+        except:
             previous = []
+
     previous.append(record)
     FEEDBACK_LOG.write_text(json.dumps(previous, indent=2, ensure_ascii=False))
+
     return {"status": "feedback_saved", "count": len(previous)}
 
-# ---------- ANÁLISIS DE DOCUMENTOS ----------
+# ---------- ANALYZE ----------
 @app.post("/analyze")
 async def analyze_document(file: UploadFile = File(...)):
     """
-    Analiza automáticamente un documento y devuelve resumen + tipo detectado.
-    No ingesta, solo analiza.
+    Analiza automáticamente un documento sin indexarlo.
+    Devuelve:
+        - tipo detectado
+        - vista previa del contenido
     """
     dest = UPLOAD_DIR / file.filename
     with open(dest, "wb") as out_file:
@@ -122,11 +129,12 @@ async def analyze_document(file: UploadFile = File(...)):
 
     text = extract_text(str(dest))
     snippet = text[:1000] + ("..." if len(text) > 1000 else "")
-    # detección rápida de tipo
-    doc_type = "contrato" if "cláusula" in text.lower() else "correo" if "estimado" in text.lower() else "otro"
+
+    # Usamos la misma lógica del sistema
+    detected = detect_document_type(text)
 
     return {
         "filename": file.filename,
-        "detected_doc_type": doc_type,
+        "detected_doc_type": detected,
         "text_preview": snippet
     }
