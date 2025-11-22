@@ -1,4 +1,4 @@
-﻿using System.Text;
+﻿    using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -10,8 +10,14 @@ using CRM_DocumentIA.Server.Infrastructure.Database;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using CRM_DocumentIA.Server.Infrastructure.Repositories;
 
-
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
 
 // 1. Configurar política de CORS
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
@@ -20,19 +26,17 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: MyAllowSpecificOrigins,
         policy =>
         {
-            policy.WithOrigins("http://localhost:3000", "https://localhost:49431")
+            policy.WithOrigins("http://localhost:3000")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
         });
 });
 
-builder.Services.AddSingleton<SmtpEmailService, SmtpEmailService>();
-
+// ✅ SERVICIOS CORREGIDOS - SIN DUPLICADOS
+builder.Services.AddScoped<SmtpEmailService>();
+builder.Services.AddScoped<TwoFactorService>();
 builder.Services.AddScoped<JWTService>();
-builder.Services.AddScoped<TwoFactorService, TwoFactorService>();
-builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
-builder.Services.AddTransient<SmtpEmailService, SmtpEmailService>();
 
 // Conexión a SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -59,8 +63,8 @@ builder.Services.AddScoped<ProcesoIAService>();
 builder.Services.AddScoped<ClienteService>();
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<InsightService>();
-builder.Services.AddScoped<JWTService>();
 builder.Services.AddScoped<RolService>();
+builder.Services.AddScoped<AutenticacionService>(); // ✅ MOVIDO AQUÍ
 builder.Services.AddScoped<InsightsHistoService>();
 
 // 2. Configuración de JWT Bearer (CRUCIAL)
@@ -86,13 +90,11 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddScoped<AutenticacionService>();
-
 // Controladores y Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// 3. CONFIGURACIÓN SWAGGER PARA LINUX
+// 3. CONFIGURACIÓN SWAGGER
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -102,11 +104,9 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API para CRM DocumentIA - Compatible con Linux"
     });
 
-    // ✅ SOLO ESTAS 2 LÍNEAS NUEVAS:
     c.MapType<IFormFile>(() => new OpenApiSchema { Type = "string", Format = "binary" });
     c.MapType<IFormFileCollection>(() => new OpenApiSchema { Type = "string", Format = "binary" });
 
-    // Configuración de seguridad JWT
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",

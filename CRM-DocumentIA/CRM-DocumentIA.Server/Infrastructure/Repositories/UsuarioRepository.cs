@@ -20,6 +20,14 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
         public async Task<Usuario?> ObtenerPorIdAsync(int id)
             => await _context.Usuarios.FindAsync(id);
 
+        public async Task<Usuario?> ObtenerPorEmailConRolAsync(string email)
+        {
+            return await _context.Usuarios
+                .Include(u => u.Rol) // 🔥 INCLUIR EL ROL
+                .Include(u => u.Email)
+                .FirstOrDefaultAsync(u => u.Email.Value == email);
+        }
+
         public async Task<Usuario?> ObtenerPorEmailAsync(string email)
         {
             try

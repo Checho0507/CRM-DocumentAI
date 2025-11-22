@@ -7,9 +7,7 @@
     <RootNamespace>CRM_DocumentIA.Server</RootNamespace>
     <UserSecretsId>1835ab6d-3254-411e-abec-8d14f59a7af8</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <SpaRoot>..\crm-documentia.client</SpaRoot>
-    <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
-    <SpaProxyServerUrl>https://localhost:49431</SpaProxyServerUrl>
+    
   </PropertyGroup>
 
   <ItemGroup>

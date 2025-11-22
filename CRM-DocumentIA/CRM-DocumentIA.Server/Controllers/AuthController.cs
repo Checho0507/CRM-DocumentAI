@@ -16,19 +16,22 @@ namespace CRM_DocumentIA.Server.Controllers
         private readonly SmtpEmailService _smtpEmailService;
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly JWTService _jwtService;
+        private readonly TwoFactorService _twoFactorService;
         private static readonly ConcurrentDictionary<string, TwoFaEntry> _twoFaStore = new();
 
         public AuthController(
             AutenticacionService servicioAuth,
             SmtpEmailService smtpEmailService,
             JWTService jwtService,
-            IUsuarioRepository usuarioRepository
+            IUsuarioRepository usuarioRepository,
+            TwoFactorService twoFactorService
         )
         {
             _servicioAuth = servicioAuth;
             _smtpEmailService = smtpEmailService;
             _usuarioRepository = usuarioRepository;
             _jwtService = jwtService;
+            _twoFactorService = twoFactorService;
         }
 
         [HttpPost("register")]
@@ -39,16 +42,34 @@ namespace CRM_DocumentIA.Server.Controllers
             try
             {
                 await _servicioAuth.RegistrarUsuarioAsync(dto);
-                return Ok(new { success = true, message = "Registro exitoso." });
+
+                // 🔥 SOLUCIÓN: Si activó 2FA, generar y guardar código en _twoFaStore
+                if (dto.DobleFactorActivado)
+                {
+                    var rng = new Random();
+                    var code = rng.Next(0, 1000000).ToString("D6");
+
+                    var entry = new TwoFaEntry
+                    {
+                        Code = code,
+                        ExpiresAt = DateTime.UtcNow.AddMinutes(5),
+                        Attempts = 0
+                    };
+                    _twoFaStore[dto.Email.ToLowerInvariant()] = entry;
+
+                    // 🔥 ENVIAR EL CÓDIGO POR EMAIL
+                    await _servicioAuth.EnviarCodigo2FAAsync(dto.Email, code);
+
+                }
+
+                return Ok(new { success = true, message = "Registro exitoso.", requires2FA = dto.DobleFactorActivado });
             }
             catch (ArgumentException ex)
             {
-                // Usuario ya existe
                 return BadRequest(new { success = false, message = ex.Message });
             }
             catch (Exception ex)
             {
-                // Otro error (ej. validación del Email ValueObject)
                 return BadRequest(new { success = false, message = "Error al registrar: " + ex.Message });
             }
         }
@@ -158,8 +179,13 @@ namespace CRM_DocumentIA.Server.Controllers
             // ✅ Código correcto → autenticamos
             _twoFaStore.TryRemove(key, out _);
 
-            var usuario = await _usuarioRepository.ObtenerPorEmailAsync(dto.Email);
+            var usuario = await _usuarioRepository.ObtenerPorEmailConRolAsync(dto.Email);
             if (usuario == null) return Unauthorized(new { message = "Usuario no encontrado." });
+
+            if (usuario.Rol == null)
+            {
+                return BadRequest(new { message = "Error: Usuario sin rol asignado." });
+            }
 
             var token = _jwtService.GenerarToken(usuario);
 
@@ -171,8 +197,13 @@ namespace CRM_DocumentIA.Server.Controllers
                 {
                     usuario.Id,
                     usuario.Nombre,
-                    Email = usuario.Email.Value, // ✅ Cambiado de .Valor a .Value
-                    usuario.Rol
+                    Email = usuario.Email.Value,
+                    // 🔥 EVITAR EL CICLO - solo datos necesarios del Rol
+                    Rol = new
+                    {
+                        usuario.Rol.Id,
+                        usuario.Rol.Nombre
+                    }
                 }
             });
         }

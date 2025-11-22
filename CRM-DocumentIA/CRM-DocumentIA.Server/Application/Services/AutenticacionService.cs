@@ -15,21 +15,24 @@ namespace CRM_DocumentIA.Server.Application.Services
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly JWTService _jwtService;
         private readonly SmtpEmailService _smtpEmailService;
+        private readonly TwoFactorService _twoFactorService;
 
         public AutenticacionService(
             IUsuarioRepository usuarioRepository,
             JWTService jwtService,
-            SmtpEmailService smtpEmailService)
+            SmtpEmailService smtpEmailService,
+            TwoFactorService twoFactorService)
         {
             _usuarioRepository = usuarioRepository;
             _jwtService = jwtService;
             _smtpEmailService = smtpEmailService;
+            _twoFactorService = twoFactorService;
         }
 
         // ===============================
-        // 🔐 REGISTRO DE USUARIO
+        // 🔐 REGISTRO DE USUARIO - CORREGIDO
         // ===============================
-        public async Task RegistrarUsuarioAsync(RegistroDTO dto)
+        public async Task<RegistroResultDTO> RegistrarUsuarioAsync(RegistroDTO dto)
         {
             var usuarioExistente = await _usuarioRepository.ObtenerPorEmailAsync(dto.Email);
             if (usuarioExistente != null)
@@ -44,10 +47,25 @@ namespace CRM_DocumentIA.Server.Application.Services
                 1
             )
             {
-                DobleFactorActivado = dto.DobleFactorActivado // Se guarda el estado del 2FA
+                DobleFactorActivado = dto.DobleFactorActivado
             };
 
             await _usuarioRepository.AgregarAsync(nuevoUsuario);
+
+            // 🔥 GENERAR Y ENVIAR CÓDIGO 2FA SI ESTÁ ACTIVADO
+            Guid? twoFaTempId = null;
+            if (dto.DobleFactorActivado)
+            {
+                twoFaTempId = await _twoFactorService.GenerateAndSendAsync(nuevoUsuario.Id, dto.Email);
+            }
+
+            return new RegistroResultDTO
+            {
+                Success = true,
+                Message = "Registro exitoso",
+                Requires2FA = dto.DobleFactorActivado,
+                TwoFaTempId = twoFaTempId
+            };
         }
 
         // ===============================
@@ -95,7 +113,7 @@ namespace CRM_DocumentIA.Server.Application.Services
                     1
                 )
                 {
-                    DobleFactorActivado = false // Por defecto desactivado
+                    DobleFactorActivado = false
                 };
 
                 await _usuarioRepository.AgregarAsync(nuevoUsuario);
@@ -132,5 +150,14 @@ namespace CRM_DocumentIA.Server.Application.Services
 
             await _smtpEmailService.SendEmailAsync(email, subject, body);
         }
+    }
+
+    // 🔥 DTO PARA EL RESULTADO DEL REGISTRO
+    public class RegistroResultDTO
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public bool Requires2FA { get; set; }
+        public Guid? TwoFaTempId { get; set; }
     }
 }
