@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using CRM_DocumentIA.Server.Domain.Entities;
 using CRM_DocumentIA.Server.Domain.Interfaces;
 using CRM_DocumentIA.Server.Infrastructure.Database;
+using System;
+using System.CodeDom;
 
 namespace CRM_DocumentIA.Server.Infrastructure.Repositories
 {
@@ -19,8 +21,18 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
             => await _context.Usuarios.FindAsync(id);
 
         public async Task<Usuario?> ObtenerPorEmailAsync(string email)
-            => await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Email.Value == email);
+        {
+            try
+            {
+                return await _context.Usuarios.FirstOrDefaultAsync(u => u.Email.Value == email);
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return null;
+            }
+            
+        }
 
         public async Task<IEnumerable<Usuario>> ObtenerTodosAsync()
             => await _context.Usuarios.ToListAsync();

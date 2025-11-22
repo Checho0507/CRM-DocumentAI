@@ -27,14 +27,18 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database.Configurations
                     .HasMaxLength(255);
             });
 
+            builder.HasOne(u => u.Rol)
+               .WithMany(r => r.Usuarios)
+               .HasForeignKey(u => u.RolId)
+               .OnDelete(DeleteBehavior.Restrict);
+
             builder.Property(u => u.PasswordHash)
                 .IsRequired()
                 .HasMaxLength(255);
 
-            builder.Property(u => u.Rol)
+            builder.Property(u => u.RolId)
                 .IsRequired()
-                .HasMaxLength(50)
-                .HasDefaultValue("usuario");
+                .HasDefaultValue(2);
 
             builder.Property(u => u.DobleFactorActivado)
                 .HasDefaultValue(false);
