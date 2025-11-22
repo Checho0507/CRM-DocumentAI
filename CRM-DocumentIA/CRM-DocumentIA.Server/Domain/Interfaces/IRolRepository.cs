@@ -1,7 +1,3 @@
-using CRM_DocumentIA.Server.Domain.Entities;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace CRM_DocumentIA.Server.Domain.Interfaces
 {
     public interface IRolRepository

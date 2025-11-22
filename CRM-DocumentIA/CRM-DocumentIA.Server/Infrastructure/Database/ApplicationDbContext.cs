@@ -20,6 +20,7 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database
         public DbSet<ProcesoIA> ProcesosIA { get; set; } = null!;
         public DbSet<TwoFA> TwoFA { get; set; } = null!;
         public DbSet<Rol> Roles { get; set; }
+        public DbSet<InsightsHisto> InsightsHisto { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

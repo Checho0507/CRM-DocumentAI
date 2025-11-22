@@ -52,6 +52,7 @@ builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IInsightRepository, InsightRepository>();
 builder.Services.AddScoped<IRolRepository, RolRepository>();
+builder.Services.AddScoped<IInsightsHistoRepository, InsightsHistoRepository>();
 
 // 🔥 AGREGAR HTTPCLIENT PARA PROCESOIASERVICE
 builder.Services.AddHttpClient<ProcesoIAService>();
@@ -64,6 +65,7 @@ builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<InsightService>();
 builder.Services.AddScoped<RolService>();
 builder.Services.AddScoped<AutenticacionService>(); // ✅ MOVIDO AQUÍ
+builder.Services.AddScoped<InsightsHistoService>();
 
 // 2. Configuración de JWT Bearer (CRUCIAL)
 builder.Services.AddAuthentication(options =>
