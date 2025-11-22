@@ -189,6 +189,35 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.ToTable("Insights", (string)null);
                 });
 
+            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.InsightsHisto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("insightsHisto", (string)null);
+                });
+
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.ProcesoIA", b =>
                 {
                     b.Property<int>("Id")
@@ -300,16 +329,59 @@ namespace CRM_DocumentIA.Server.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<string>("Rol")
-                        .IsRequired()
+                    b.Property<int>("RolId")
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("usuario");
+                        .HasColumnType("int")
+                        .HasDefaultValue(2);
 
                     b.HasKey("Id");
 
+                    b.HasIndex("RolId");
+
                     b.ToTable("Usuarios", (string)null);
+                });
+
+            modelBuilder.Entity("Rol", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Descripcion = "Administrador del sistema",
+                            Nombre = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Descripcion = "Usuario estándar",
+                            Nombre = "Usuario"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Descripcion = "Analista de documentos",
+                            Nombre = "Analista"
+                        });
                 });
 
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Documento", b =>
@@ -349,6 +421,17 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.Navigation("ProcesoIA");
                 });
 
+            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.InsightsHisto", b =>
+                {
+                    b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.ProcesoIA", b =>
                 {
                     b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Documento", "Documento")
@@ -362,6 +445,12 @@ namespace CRM_DocumentIA.Server.Migrations
 
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Usuario", b =>
                 {
+                    b.HasOne("Rol", "Rol")
+                        .WithMany("Usuarios")
+                        .HasForeignKey("RolId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.OwnsOne("CRM_DocumentIA.Domain.ValueObjects.Email", "Email", b1 =>
                         {
                             b1.Property<int>("UsuarioId")
@@ -383,6 +472,8 @@ namespace CRM_DocumentIA.Server.Migrations
 
                     b.Navigation("Email")
                         .IsRequired();
+
+                    b.Navigation("Rol");
                 });
 
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Cliente", b =>
@@ -402,6 +493,11 @@ namespace CRM_DocumentIA.Server.Migrations
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.Usuario", b =>
                 {
                     b.Navigation("Documentos");
+                });
+
+            modelBuilder.Entity("Rol", b =>
+                {
+                    b.Navigation("Usuarios");
                 });
 #pragma warning restore 612, 618
         }
