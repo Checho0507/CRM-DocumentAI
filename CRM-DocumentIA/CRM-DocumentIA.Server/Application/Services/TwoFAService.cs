@@ -1,8 +1,9 @@
-﻿using System.Security.Cryptography;
+﻿using System;
+using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using CRM_DocumentIA.Server.Domain.Entities;
 using CRM_DocumentIA.Server.Infrastructure.Database;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -19,7 +20,6 @@ public class TwoFactorService : ITwoFactorService
     private readonly SmtpEmailService _email;
     private readonly IConfiguration _config;
 
-    // lifetime: scoped
     public TwoFactorService(ApplicationDbContext db, SmtpEmailService email, IConfiguration config)
     {
         _db = db;
@@ -29,7 +29,6 @@ public class TwoFactorService : ITwoFactorService
 
     private string HashCode(string code)
     {
-        // usa HMACSHA256 con key en configuración para no guardar el code en texto claro
         var key = Encoding.UTF8.GetBytes(_config["TwoFA:HashKey"] ?? "default-secret-key-please-change");
         using var h = new HMACSHA256(key);
         var payload = Encoding.UTF8.GetBytes(code);
@@ -38,28 +37,39 @@ public class TwoFactorService : ITwoFactorService
 
     public async Task<Guid> GenerateAndSendAsync(int usuarioId, string email)
     {
-        // genera OTP 6 dígitos
-        var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
-        var hashed = HashCode(code);
-
-        var req = new TwoFA
+        try
         {
-            Id = Guid.NewGuid(),
-            UsuarioId = usuarioId,
-            CodeHash = hashed,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(5),
-            Verified = false,
-            Attempts = 0
-        };
+            
+            var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+            var hashed = HashCode(code);
 
-        _db.TwoFA.Add(req);
-        await _db.SaveChangesAsync();
+            
+            var req = new TwoFA
+            {
+                Id = Guid.NewGuid(),
+                UsuarioId = usuarioId,
+                CodeHash = hashed,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(5),
+                Verified = false,
+                Attempts = 0
+            };
 
-        // enviar email (puedes ajustar HTML)
-        var html = $"<p>Tu código de verificación es <strong>{code}</strong>. Expira en 5 minutos.</p>";
-        await _email.SendEmailAsync(email, "Código de verificación (2FA) - CRM", html);
+            _db.TwoFA.Add(req);
+            await _db.SaveChangesAsync();
 
-        return req.Id;
+            // DEBUG: Verificar configuración SMTP
+            var smtpHost = _config["Email:SmtpHost"];
+            var smtpUser = _config["Email:SmtpUser"];
+            var html = $"<p>Tu código de verificación es <strong>{code}</strong>. Expira en 5 minutos.</p>";
+
+            await _email.SendEmailAsync(email, "Código de verificación (2FA) - CRM", html);
+
+            return req.Id;
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
     }
 
     public async Task<bool> VerifyAsync(Guid tempId, string code)

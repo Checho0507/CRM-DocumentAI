@@ -36,16 +36,42 @@ export default function RegisterPage() {
         body: JSON.stringify(formData),
       });
 
+      console.log("🔍 Response status:", res.status);
+      console.log("🔍 Response ok:", res.ok);
+
       if (!res.ok) {
         const errorText = await res.text();
         console.error("❌ Error en registro:", errorText);
         setError("No se pudo registrar el usuario.");
         return;
       }
+
+      // 🔥 LEER COMO JSON
+      const result = await res.json();
+      console.log("🔍 Registration result:", result);
+      console.log("🔍 requires2FA value:", result.requires2FA);
+
+
       alert("✅ Registro exitoso");
-      router.push("/login" as Route);
+
+      // 🔥 VERIFICAR EXACTAMENTE QUÉ VALOR TIENE
+      const requires2FA = result.requires2FA;
+
+      if (requires2FA) {
+
+        // Guardar email en localStorage
+        localStorage.setItem("pending2faEmail", formData.email);
+
+        // Redirigir a la página de verificación 2FA
+        router.push(`/auth/2FA?email=${encodeURIComponent(formData.email)}` as Route);
+
+      } else {
+
+        router.push("/login" as Route);
+      }
+
     } catch (error) {
-      console.error(error);
+      console.error("❌ Fetch error:", error);
       setError("❌ Error al conectar con el servidor.");
     } finally {
       setLoading(false);

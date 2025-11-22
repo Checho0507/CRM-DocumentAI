@@ -7,6 +7,7 @@ namespace CRM_DocumentIA.Server.Domain.Interfaces
     {
         Task<Usuario?> ObtenerPorIdAsync(int id);
         Task<Usuario?> ObtenerPorEmailAsync(string email);
+        Task<Usuario?> ObtenerPorEmailConRolAsync(string email);
         Task<IEnumerable<Usuario>> ObtenerTodosAsync();
         Task AgregarAsync(Usuario usuario);
         Task ActualizarAsync(Usuario usuario);

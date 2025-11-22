@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace CRM_DocumentIA.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class ActualizacionDocumentosYProcesamiento : Migration
+    public partial class InitialMigrationConsolidada : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -28,6 +30,10 @@ namespace CRM_DocumentIA.Server.Migrations
                 table: "Usuarios");
 
             migrationBuilder.DropColumn(
+                name: "Rol",
+                table: "Usuarios");
+
+            migrationBuilder.DropColumn(
                 name: "TipoProceso",
                 table: "ProcesosIA");
 
@@ -44,16 +50,10 @@ namespace CRM_DocumentIA.Server.Migrations
                 table: "ProcesosIA",
                 newName: "UrlServicio");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "Rol",
-                table: "Usuarios",
-                type: "nvarchar(50)",
-                maxLength: 50,
-                nullable: false,
-                defaultValue: "usuario",
-                oldClrType: typeof(string),
-                oldType: "nvarchar(max)",
-                oldDefaultValue: "usuario");
+            migrationBuilder.RenameColumn(
+                name: "ContenidoExtraido",
+                table: "Documentos",
+                newName: "ResumenDocumento");
 
             migrationBuilder.AlterColumn<string>(
                 name: "PasswordHash",
@@ -92,6 +92,13 @@ namespace CRM_DocumentIA.Server.Migrations
                 defaultValue: false,
                 oldClrType: typeof(bool),
                 oldType: "bit");
+
+            migrationBuilder.AddColumn<int>(
+                name: "RolId",
+                table: "Usuarios",
+                type: "int",
+                nullable: false,
+                defaultValue: 2);
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "FechaInicio",
@@ -215,12 +222,6 @@ namespace CRM_DocumentIA.Server.Migrations
                 type: "int",
                 nullable: true);
 
-            migrationBuilder.AddColumn<string>(
-                name: "ResumenDocumento",
-                table: "Documentos",
-                type: "nvarchar(max)",
-                nullable: true);
-
             migrationBuilder.AddColumn<long>(
                 name: "TamañoArchivo",
                 table: "Documentos",
@@ -240,6 +241,35 @@ namespace CRM_DocumentIA.Server.Migrations
                 type: "int",
                 nullable: false,
                 defaultValue: 0);
+
+            migrationBuilder.CreateTable(
+                name: "Roles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Nombre = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Descripcion = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Roles", x => x.Id);
+                });
+
+            migrationBuilder.InsertData(
+                table: "Roles",
+                columns: new[] { "Id", "Descripcion", "Nombre" },
+                values: new object[,]
+                {
+                    { 1, "Administrador del sistema", "Admin" },
+                    { 2, "Usuario estándar", "Usuario" },
+                    { 3, "Analista de documentos", "Analista" }
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Usuarios_RolId",
+                table: "Usuarios",
+                column: "RolId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProcesosIA_Estado",
@@ -308,6 +338,14 @@ namespace CRM_DocumentIA.Server.Migrations
                 principalTable: "Documentos",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Usuarios_Roles_RolId",
+                table: "Usuarios",
+                column: "RolId",
+                principalTable: "Roles",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
@@ -333,6 +371,17 @@ namespace CRM_DocumentIA.Server.Migrations
                 name: "FK_ProcesosIA_Documentos_DocumentoId",
                 table: "ProcesosIA");
 
+            migrationBuilder.DropForeignKey(
+                name: "FK_Usuarios_Roles_RolId",
+                table: "Usuarios");
+
+            migrationBuilder.DropTable(
+                name: "Roles");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Usuarios_RolId",
+                table: "Usuarios");
+
             migrationBuilder.DropIndex(
                 name: "IX_ProcesosIA_Estado",
                 table: "ProcesosIA");
@@ -356,6 +405,10 @@ namespace CRM_DocumentIA.Server.Migrations
             migrationBuilder.DropIndex(
                 name: "IX_Documentos_UsuarioId",
                 table: "Documentos");
+
+            migrationBuilder.DropColumn(
+                name: "RolId",
+                table: "Usuarios");
 
             migrationBuilder.DropColumn(
                 name: "Error",
@@ -414,10 +467,6 @@ namespace CRM_DocumentIA.Server.Migrations
                 table: "Documentos");
 
             migrationBuilder.DropColumn(
-                name: "ResumenDocumento",
-                table: "Documentos");
-
-            migrationBuilder.DropColumn(
                 name: "TamañoArchivo",
                 table: "Documentos");
 
@@ -434,16 +483,10 @@ namespace CRM_DocumentIA.Server.Migrations
                 table: "ProcesosIA",
                 newName: "Resultado");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "Rol",
-                table: "Usuarios",
-                type: "nvarchar(max)",
-                nullable: false,
-                defaultValue: "usuario",
-                oldClrType: typeof(string),
-                oldType: "nvarchar(50)",
-                oldMaxLength: 50,
-                oldDefaultValue: "usuario");
+            migrationBuilder.RenameColumn(
+                name: "ResumenDocumento",
+                table: "Documentos",
+                newName: "ContenidoExtraido");
 
             migrationBuilder.AlterColumn<string>(
                 name: "PasswordHash",
@@ -482,6 +525,13 @@ namespace CRM_DocumentIA.Server.Migrations
                 oldClrType: typeof(bool),
                 oldType: "bit",
                 oldDefaultValue: false);
+
+            migrationBuilder.AddColumn<string>(
+                name: "Rol",
+                table: "Usuarios",
+                type: "nvarchar(max)",
+                nullable: false,
+                defaultValue: "usuario");
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "FechaInicio",
