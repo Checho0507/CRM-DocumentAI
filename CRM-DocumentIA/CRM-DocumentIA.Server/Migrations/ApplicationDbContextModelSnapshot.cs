@@ -373,7 +373,7 @@ namespace CRM_DocumentIA.Server.Migrations
                         new
                         {
                             Id = 2,
-                            Descripcion = "Usuario estándar",
+                            Descripcion = "Usuario est�ndar",
                             Nombre = "Usuario"
                         },
                         new

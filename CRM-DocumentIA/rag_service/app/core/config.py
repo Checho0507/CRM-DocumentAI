@@ -4,6 +4,7 @@ from pydantic import Field
 from pathlib import Path
 
 class Settings(BaseSettings):
+    azure_container: str = Field(default="rag-docs")  # Add this line
 
     # ============================
     # 🔹 APP
@@ -66,3 +67,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+azure_container: str | None = None

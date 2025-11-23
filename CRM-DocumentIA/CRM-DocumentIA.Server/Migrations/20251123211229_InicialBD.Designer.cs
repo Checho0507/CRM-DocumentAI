@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CRM_DocumentIA.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251122180041_InitialMigrationConsolidada")]
-    partial class InitialMigrationConsolidada
+    [Migration("20251123211229_InicialBD")]
+    partial class InicialBD
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -192,6 +192,35 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.ToTable("Insights", (string)null);
                 });
 
+            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.InsightsHisto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("insightsHisto", (string)null);
+                });
+
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.ProcesoIA", b =>
                 {
                     b.Property<int>("Id")
@@ -347,7 +376,7 @@ namespace CRM_DocumentIA.Server.Migrations
                         new
                         {
                             Id = 2,
-                            Descripcion = "Usuario estándar",
+                            Descripcion = "Usuario est�ndar",
                             Nombre = "Usuario"
                         },
                         new
@@ -393,6 +422,17 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.Navigation("Documento");
 
                     b.Navigation("ProcesoIA");
+                });
+
+            modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.InsightsHisto", b =>
+                {
+                    b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("CRM_DocumentIA.Server.Domain.Entities.ProcesoIA", b =>
