@@ -1,9 +1,20 @@
-// /pages/api/auth/[...nextauth].ts (FINAL Y CORREGIDO)
-
+// /pages/api/auth/[...nextauth].ts
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { API_ROUTES } from "@/lib/apiRoutes";
+
+function safeParseJwt(token?: string) {
+  if (!token) return null;
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = Buffer.from(parts[1], "base64").toString("utf8");
+    return JSON.parse(payload);
+  } catch {
+    return null;
+  }
+}
 
 const handler = NextAuth({
   providers: [
@@ -11,54 +22,78 @@ const handler = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+
     CredentialsProvider({
       name: "Credentials",
       credentials: {
+        id: { label: "Id", type: "text" },
         name: { label: "Name", type: "text" },
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
-        token: { label: "Token", type: "text" }, // para 2FA
+        token: { label: "Token", type: "text" },
+        role: { label: "Role", type: "text" },
       },
+
       async authorize(credentials) {
+        // FLUJO DE 2FA (cuando ya tienes el token del backend)
+        if (credentials?.token) {
+          let id = credentials.id ?? null;
+          let role = credentials.role ?? null;
+          let email = credentials.email ?? null;
+          let name = credentials.name ?? null;
+
+          if (!id || !role || !email || !name) {
+            const payload = safeParseJwt(credentials.token);
+            if (payload) {
+              id = id || payload.sub || payload.nameidentifier || payload.nameid || payload.id || payload.userId || payload.user_id || null;
+              email = email || payload.email || payload.upn || null;
+              name = name || payload.name || null;
+              role = role || payload.role || payload.roles || payload.rolNombre || payload.rol || null;
+            }
+          }
+
+          return {
+            id: id ? String(id) : undefined,
+            email: email ?? undefined,
+            name: name ?? undefined,
+            token: credentials.token,
+            role: role ?? undefined,
+          };
+        }
+
+        // LOGIN NORMAL (email + password)
         try {
-          if (credentials?.token) {
-        return {
-          email: credentials.email,
-          token: credentials.token,
-          name: credentials.name
-        };
-      }
-          // 1. Lógica de Credenciales: Perfecta, ya mapea el JWT al objeto 'user'
           const res = await fetch(API_ROUTES.LOGIN, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: credentials?.email,
               password: credentials?.password,
-              name: credentials?.name,
             }),
           });
 
           if (!res.ok) {
-            console.error("❌ Login failed:", res.status, await res.text());
             return null;
           }
-          
-          const data = await res.json(); 
-          console.log("✅ Login successful:", data.usuario.email, data.usuario.id);
 
-          // 2. Retorna el objeto 'user' simple con el JWT adjunto
-          const user = {
-            id: String(data.usuario.id),
-            email: data.usuario.email,
-            name: data.usuario.nombre,
-            role: data.usuario.rol,
-            token: data.token, // 🎯 PROPIEDAD CLAVE
+          const data = await res.json();
+
+          const usuario = data.usuario || {};
+          const role =
+            (usuario?.rol && (usuario.rol.nombre ?? usuario.rol)) ||
+            usuario?.rolNombre ||
+            usuario?.rolId ||
+            data?.rol ||
+            null;
+
+          return {
+            id: String(usuario.id),
+            name: usuario.nombre ?? usuario.name ?? undefined,
+            email: usuario.email ?? undefined,
+            role: role ?? undefined,
+            token: data.token,
           };
-          console.log("Marlon usuarioSession", user)
-          return user;
-        } catch (error) {
-          console.error("🚨 Authorize error:", error);
+        } catch {
           return null;
         }
       },
@@ -67,99 +102,86 @@ const handler = NextAuth({
 
   callbacks: {
     async signIn({ user, account }) {
-      console.log("🔐 SignIn callback:", {
-        name: user?.name,
-        email: user?.email,
-        token: user?.token,
-        provider: account?.provider,
-      });
-
-      // 🎯 NUEVO FLUJO DE LOGIN SOCIAL (GOOGLE)
+      // LOGIN SOCIAL GOOGLE
       if (account?.provider === "google") {
         try {
-          console.log("🔍 Calling Social Login endpoint...");
-
-          // 1. Llama al endpoint único que gestiona Login O Registro en el backend
           const res = await fetch(API_ROUTES.SOCIAL_LOGIN, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: user.email,
-              name: user.name, // Solo se necesita email y name
+              name: user.name,
             }),
           });
 
-          // Si el backend no devuelve 200 OK, es un error fatal (ej. DB caída)
           if (!res.ok) {
-            console.error("❌ Social Login failed:", res.status, await res.text());
-            return false; 
+            return false;
           }
 
-          // 2. Respuesta: { token, usuario: { id, email, ... } }
           const data = await res.json();
-          console.log("✅ Social Login/Register successful:", data.usuario.email);
 
-          // 3. Modificamos el objeto 'user' de NextAuth para adjuntar la info y el JWT
-          // (Es necesario usar 'as any' porque 'user' viene tipado solo con las propiedades básicas)
-          user.id = String(data.usuario.id);
-          user.role = data.usuario.rol;
-          user.name = data.usuario.nombre;
-          user.token = data.token; // 🎯 Adjuntamos el JWT
-          console.log("MArlon UserSession Google", data.usuario)
-          return true; // Permite el inicio de sesión
+          const usuario = data.usuario || {};
+          const role =
+            (usuario?.rol && (usuario.rol.nombre ?? usuario.rol)) ||
+            usuario?.rolNombre ||
+            usuario?.rolId ||
+            data?.rol ||
+            null;
 
-        } catch (error) {
-          console.error("🚨 Error in Google signIn:", error);
+          user.id = String(usuario?.id ?? user.id ?? "");
+          user.name = usuario?.nombre ?? user.name;
+          user.email = usuario?.email ?? user.email;
+          user.role = role ?? user.role;
+          user.token = data.token ?? user.token;
+
+          return true;
+        } catch {
           return false;
         }
       }
 
-      // Para Credenciales, el 'authorize' ya devolvió el usuario con el token, así que:
       return true;
     },
 
-    // 🎯 Callback JWT: Almacena el token del backend en el token de la sesión
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
-        token.id = String(user.id);
-        token.email = user.email;
-        token.role = user.role;
-        // La propiedad 'token' viene de Credentials o fue adjuntada en signIn (Google)
-        token.accessToken = user.token || account?.access_token;
+        token.id = user.id ?? token.id;
+        token.role = user.role ?? token.role;
+        token.email = user.email ?? token.email;
+        token.name = user.name ?? token.name;
+        token.accessToken = user.token ?? token.accessToken;
       }
+
       return token;
     },
 
-    // 🎯 Callback Session: Expone el token para que la app lo use en headers
     async session({ session, token }) {
-      if (token) {
-        session.user = {
-          id: token.id as string,
-          email: token.email as string,
-          role: token.role as string,
-          name: token.name as string,
-          image: token.picture as string,
-        };
-        session.accessToken = token.accessToken as string;
-      }
+      session.user = {
+        id: token.id,
+        email: token.email,
+        name: token.name,
+        role: token.role,
+      };
+
+      session.accessToken = token.accessToken;
+
       return session;
     },
 
-    // ... (El callback redirect y el resto de la configuración se mantienen) ...
     async redirect({ url, baseUrl }) {
-        if (url.includes("/api/auth/error")) {
-            return `${baseUrl}/login?error=auth_failed`;
-        }
-        if (url.includes("/register")) {
-            return url.startsWith("/") ? `${baseUrl}${url}` : url;
-        }
-        if (url === `${baseUrl}/api/auth/signin` || url === `${baseUrl}/login`) {
-            return `${baseUrl}/dashboard`;
-        }
-        if (url === `${baseUrl}/api/auth/signout`) {
-            return `${baseUrl}/login`;  // 👈 redirige al login al cerrar sesión
-        }
+      if (url.includes("/api/auth/error")) {
+        return `${baseUrl}/login?error=auth_failed`;
+      }
+      if (url.includes("/register")) {
         return url.startsWith("/") ? `${baseUrl}${url}` : url;
+      }
+      if (url === `${baseUrl}/api/auth/signin` || url === `${baseUrl}/login`) {
+        return `${baseUrl}/dashboard`;
+      }
+      if (url === `${baseUrl}/api/auth/signout`) {
+        return `${baseUrl}/login`;
+      }
+      return url.startsWith("/") ? `${baseUrl}${url}` : url;
     },
   },
 
@@ -172,7 +194,7 @@ const handler = NextAuth({
 
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 días
+    maxAge: 30 * 24 * 60 * 60,
   },
 
   debug: process.env.NODE_ENV === "development",
