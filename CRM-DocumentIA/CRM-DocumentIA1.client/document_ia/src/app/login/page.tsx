@@ -1,9 +1,9 @@
 "use client";
 
 import type { Route } from "next";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
 import { API_ROUTES } from "@/lib/apiRoutes";
 
 export default function Login() {
@@ -12,6 +12,17 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
+
+  // 🔥 NUEVO: Detectar si la sesión requiere 2FA (para Google)
+  useEffect(() => {
+    if (session?.requires2FA) {
+      console.log("🔵 Login detectó que requiere 2FA para Google");
+      localStorage.setItem("pending2faEmail", session.user?.email || "");
+      router.push("/auth/2FA" as Route);
+    }
+  }, [session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,11 +84,23 @@ export default function Login() {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signIn("google", {
-        callbackUrl: "/dashboard",
+      setIsLoading(true);
+      setError("");
+
+      // 🔥 CORREGIDO: Usamos signIn sin callbackUrl para poder detectar el 2FA
+      const result = await signIn("google", {
+        redirect: false,
       });
+
+      if (result?.error) {
+        setError("Error al iniciar sesión con Google");
+      }
+      // Si requiere 2FA, el useEffect lo detectará automáticamente
+
     } catch {
       setError("Error al iniciar sesión con Google");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -121,7 +144,8 @@ export default function Login() {
         <div className="mt-6">
           <button
             onClick={handleGoogleSignIn}
-            className="w-full border py-3 rounded-xl hover:bg-gray-100 flex items-center justify-center gap-2"
+            disabled={isLoading}
+            className="w-full border py-3 rounded-xl hover:bg-gray-100 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -141,7 +165,7 @@ export default function Login() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Acceder con Google
+            {isLoading ? "Cargando..." : "Acceder con Google"}
           </button>
         </div>
       </div>
