@@ -215,5 +215,132 @@ namespace CRM_DocumentIA.Server.Controllers
                 return StatusCode(500, new { mensaje = "Error al eliminar documento", error = ex.Message });
             }
         }
+
+        // 🔹 ENDPOINTS FALTANTES - Agregados según la documentación inicial
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            try
+            {
+                var documentos = await _documentoService.ObtenerTodosAsync();
+                return Ok(documentos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener todos los documentos");
+                return StatusCode(500, new { mensaje = "Error al obtener documentos", error = ex.Message });
+            }
+        }
+
+        [HttpGet("estado")]
+        public async Task<IActionResult> GetEstados()
+        {
+            try
+            {
+                var estados = new[]
+                {
+                    new { Valor = "pendiente", Texto = "Pendiente" },
+                    new { Valor = "procesando", Texto = "Procesando" },
+                    new { Valor = "completado", Texto = "Completado" },
+                    new { Valor = "error", Texto = "Error" }
+                };
+
+                return Ok(estados);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener estados de documentos");
+                return StatusCode(500, new { mensaje = "Error al obtener estados", error = ex.Message });
+            }
+        }
+
+        [HttpPut("{id}/estado")]
+        public async Task<IActionResult> UpdateEstado(int id, [FromBody] ActualizarEstadoDocumentoDto dto)
+        {
+            try
+            {
+                if (dto == null || string.IsNullOrEmpty(dto.Estado))
+                    return BadRequest(new { mensaje = "Estado no válido" });
+
+                var documento = await _documentoService.ObtenerPorIdAsync(id);
+                if (documento == null)
+                    return NotFound(new { mensaje = "Documento no encontrado" });
+
+                await _documentoService.ActualizarEstadoAsync(id, dto.Estado, dto.MensajeError);
+                return Ok(new { mensaje = "Estado actualizado correctamente" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al actualizar estado del documento {id}");
+                return StatusCode(500, new { mensaje = "Error al actualizar estado", error = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}/download")]
+        public async Task<IActionResult> Download(int id)
+        {
+            try
+            {
+                var documento = await _documentoService.ObtenerPorIdAsync(id);
+                if (documento == null)
+                    return NotFound(new { mensaje = "Documento no encontrado" });
+
+                byte[] archivoBytes;
+                string contentType = "application/octet-stream";
+                string nombreArchivo = documento.NombreArchivo;
+
+                if (documento.ArchivoDocumento != null && documento.ArchivoDocumento.Length > 0)
+                {
+                    archivoBytes = documento.ArchivoDocumento;
+                }
+                else if (!string.IsNullOrEmpty(documento.RutaArchivo) && System.IO.File.Exists(documento.RutaArchivo))
+                {
+                    archivoBytes = await System.IO.File.ReadAllBytesAsync(documento.RutaArchivo);
+                }
+                else
+                {
+                    return NotFound(new { mensaje = "Archivo no encontrado" });
+                }
+
+                // Determinar content type según extensión
+                if (nombreArchivo.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    contentType = "application/pdf";
+                else if (nombreArchivo.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
+                    contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+                else if (nombreArchivo.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+                    contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+                return File(archivoBytes, contentType, nombreArchivo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al descargar documento {id}");
+                return StatusCode(500, new { mensaje = "Error al descargar documento", error = ex.Message });
+            }
+        }
+
+        [HttpGet("stats/usuario/{usuarioId}")]
+        public async Task<IActionResult> GetStatsByUsuario(int usuarioId)
+        {
+            try
+            {
+                var stats = await _documentoService.ObtenerEstadisticasPorUsuarioAsync(usuarioId);
+                return Ok(stats);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al obtener estadísticas del usuario {usuarioId}");
+                return StatusCode(500, new { mensaje = "Error al obtener estadísticas", error = ex.Message });
+            }
+        }
+    }
+
+    // 🔹 DTOs para los nuevos endpoints
+
+    public class ActualizarEstadoDocumentoDto
+    {
+        public string Estado { get; set; } = string.Empty;
+        public string? MensajeError { get; set; }
     }
 }

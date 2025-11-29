@@ -33,6 +33,35 @@ namespace CRM_DocumentIA.Server.Application.Services
         public Task EliminarAsync(int id) 
             => _documentoRepository.EliminarAsync(id);
 
+        // 🔹 MÉTODOS NUEVOS - Agregados
+
+        public async Task ActualizarEstadoAsync(int id, string estado, string? mensajeError = null)
+        {
+            var documento = await _documentoRepository.ObtenerPorIdAsync(id);
+            if (documento == null)
+                throw new KeyNotFoundException($"Documento con ID {id} no encontrado");
+
+            documento.EstadoProcesamiento = estado;
+            documento.ErrorProcesamiento = mensajeError;
+            
+            await _documentoRepository.ActualizarAsync(documento);
+        }
+
+        public async Task<object> ObtenerEstadisticasPorUsuarioAsync(int usuarioId)
+        {
+            var documentos = (await _documentoRepository.ObtenerPorUsuarioIdAsync(usuarioId)).ToList();
+
+            return new
+            {
+                TotalDocumentos = documentos.Count,
+                Completados = documentos.Count(d => d.EstadoProcesamiento == "completado"),
+                Procesando = documentos.Count(d => d.EstadoProcesamiento == "procesando"),
+                ConError = documentos.Count(d => d.EstadoProcesamiento == "error"),
+                Pendientes = documentos.Count(d => d.EstadoProcesamiento == "pendiente"),
+                UltimaActualizacion = DateTime.UtcNow
+            };
+        }
+
         // Métodos específicos de negocio
         public async Task<bool> MarcarComoProcesandoAsync(int documentoId)
         {

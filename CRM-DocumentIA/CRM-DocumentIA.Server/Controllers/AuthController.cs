@@ -41,7 +41,7 @@ namespace CRM_DocumentIA.Server.Controllers
         {
             try
             {
-                await _servicioAuth.RegistrarUsuarioAsync(dto);
+                var res = await _servicioAuth.RegistrarUsuarioAsync(dto);
 
                 // 🔥 SOLUCIÓN: Si activó 2FA, generar y guardar código en _twoFaStore
                 if (dto.DobleFactorActivado)
@@ -61,7 +61,7 @@ namespace CRM_DocumentIA.Server.Controllers
                     await _servicioAuth.EnviarCodigo2FAAsync(dto.Email, code);
 
                 }
-
+                Console.WriteLine("Usuario registrado con éxito: " , res,dto);
                 return Ok(new { success = true, message = "Registro exitoso.", requires2FA = dto.DobleFactorActivado });
             }
             catch (ArgumentException ex)
@@ -82,6 +82,7 @@ namespace CRM_DocumentIA.Server.Controllers
             try
             {
                 var respuesta = await _servicioAuth.LoginAsync(dto);
+                Console.WriteLine("Respuesta de login: ", respuesta);
                 // NextAuth espera un objeto que contenga el token y datos de usuario
                 return Ok(respuesta);
             }

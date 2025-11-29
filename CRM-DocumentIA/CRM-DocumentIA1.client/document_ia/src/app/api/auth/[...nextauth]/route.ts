@@ -1,4 +1,4 @@
-// /pages/api/auth/[...nextauth].ts (FINAL Y CORREGIDO)
+// /pages/api/auth/[...nextauth].ts (CORREGIDO)
 
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
@@ -14,6 +14,7 @@ const handler = NextAuth({
     CredentialsProvider({
       name: "Credentials",
       credentials: {
+        id: { label: "Id", type: "text" },
         name: { label: "Name", type: "text" },
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
@@ -22,20 +23,42 @@ const handler = NextAuth({
       async authorize(credentials) {
         try {
           if (credentials?.token) {
-        return {
-          email: credentials.email,
-          token: credentials.token,
-          name: credentials.name
-        };
-      }
-          // 1. Lógica de Credenciales: Perfecta, ya mapea el JWT al objeto 'user'
+            // 🔹 CORRECCIÓN: Para 2FA, también necesitamos hacer la verificación con el backend
+            console.log("🔐 Verificando 2FA para:", credentials.email);
+            
+            const res = await fetch(API_ROUTES.VERIFY_2FA, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: credentials.email,
+                Codigo: credentials.token,
+              }),
+            });
+
+            if (!res.ok) {
+              console.error("❌ 2FA verification failed:", await res.text());
+              return null;
+            }
+
+            const data = await res.json();
+            console.log("✅ 2FA verification successful:", data.usuario.email);
+
+            return {
+              id: String(data.usuario.id),
+              email: data.usuario.email,
+              name: data.usuario.nombre,
+              role: data.usuario.rol,
+              token: data.token,
+            };
+          }
+
+          // 1. Lógica de Credenciales
           const res = await fetch(API_ROUTES.LOGIN, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: credentials?.email,
               password: credentials?.password,
-              name: credentials?.name,
             }),
           });
 
@@ -47,15 +70,15 @@ const handler = NextAuth({
           const data = await res.json(); 
           console.log("✅ Login successful:", data.usuario.email, data.usuario.id);
 
-          // 2. Retorna el objeto 'user' simple con el JWT adjunto
+          // 2. Retorna el objeto 'user' con todas las propiedades necesarias
           const user = {
             id: String(data.usuario.id),
             email: data.usuario.email,
             name: data.usuario.nombre,
             role: data.usuario.rol,
-            token: data.token, // 🎯 PROPIEDAD CLAVE
+            token: data.token,
           };
-          console.log("Marlon usuarioSession", user)
+          console.log("Marlon usuarioSession authorize:", user);
           return user;
         } catch (error) {
           console.error("🚨 Authorize error:", error);
@@ -67,46 +90,46 @@ const handler = NextAuth({
 
   callbacks: {
     async signIn({ user, account }) {
-      console.log("🔐 SignIn callback:", {
+      console.log("🔐 SignIn callback - user completo:", user);
+      console.log("🔐 SignIn callback - propiedades:", {
+        id: user?.id,
         name: user?.name,
         email: user?.email,
         token: user?.token,
+        role: user?.role,
         provider: account?.provider,
       });
 
-      // 🎯 NUEVO FLUJO DE LOGIN SOCIAL (GOOGLE)
+      // 🎯 FLUJO DE LOGIN SOCIAL (GOOGLE)
       if (account?.provider === "google") {
         try {
           console.log("🔍 Calling Social Login endpoint...");
 
-          // 1. Llama al endpoint único que gestiona Login O Registro en el backend
           const res = await fetch(API_ROUTES.SOCIAL_LOGIN, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: user.email,
-              name: user.name, // Solo se necesita email y name
+              name: user.name,
             }),
           });
 
-          // Si el backend no devuelve 200 OK, es un error fatal (ej. DB caída)
           if (!res.ok) {
             console.error("❌ Social Login failed:", res.status, await res.text());
             return false; 
           }
 
-          // 2. Respuesta: { token, usuario: { id, email, ... } }
           const data = await res.json();
           console.log("✅ Social Login/Register successful:", data.usuario.email);
 
-          // 3. Modificamos el objeto 'user' de NextAuth para adjuntar la info y el JWT
-          // (Es necesario usar 'as any' porque 'user' viene tipado solo con las propiedades básicas)
+          // 🔹 CORRECCIÓN: Actualizar todas las propiedades del usuario
           user.id = String(data.usuario.id);
           user.role = data.usuario.rol;
           user.name = data.usuario.nombre;
-          user.token = data.token; // 🎯 Adjuntamos el JWT
-          console.log("MArlon UserSession Google", data.usuario)
-          return true; // Permite el inicio de sesión
+          user.token = data.token;
+          console.log("Marlon UserSession Google actualizado:", user);
+          
+          return true;
 
         } catch (error) {
           console.error("🚨 Error in Google signIn:", error);
@@ -114,24 +137,39 @@ const handler = NextAuth({
         }
       }
 
-      // Para Credenciales, el 'authorize' ya devolvió el usuario con el token, así que:
+      // Para Credenciales, el 'authorize' ya devolvió el usuario con el token
+      console.log("✅ Login con credenciales exitoso, user:", user);
       return true;
     },
 
     // 🎯 Callback JWT: Almacena el token del backend en el token de la sesión
     async jwt({ token, user, account }) {
+      console.log("🔄 JWT callback - user:", user);
+      console.log("🔄 JWT callback - token actual:", token);
+      
       if (user) {
+        // 🔹 CORRECCIÓN: Asegurar que todas las propiedades se copien al token
         token.id = String(user.id);
         token.email = user.email;
         token.role = user.role;
-        // La propiedad 'token' viene de Credentials o fue adjuntada en signIn (Google)
+        token.name = user.name;
         token.accessToken = user.token || account?.access_token;
+        
+        console.log("✅ JWT actualizado con user data:", {
+          id: token.id,
+          email: token.email,
+          role: token.role,
+          name: token.name,
+          hasAccessToken: !!token.accessToken
+        });
       }
       return token;
     },
 
     // 🎯 Callback Session: Expone el token para que la app lo use en headers
     async session({ session, token }) {
+      console.log("📋 Session callback - token:", token);
+      
       if (token) {
         session.user = {
           id: token.id as string,
@@ -141,11 +179,15 @@ const handler = NextAuth({
           image: token.picture as string,
         };
         session.accessToken = token.accessToken as string;
+        
+        console.log("✅ Session creada:", {
+          user: session.user,
+          hasAccessToken: !!session.accessToken
+        });
       }
       return session;
     },
 
-    // ... (El callback redirect y el resto de la configuración se mantienen) ...
     async redirect({ url, baseUrl }) {
         if (url.includes("/api/auth/error")) {
             return `${baseUrl}/login?error=auth_failed`;
@@ -157,7 +199,7 @@ const handler = NextAuth({
             return `${baseUrl}/dashboard`;
         }
         if (url === `${baseUrl}/api/auth/signout`) {
-            return `${baseUrl}/login`;  // 👈 redirige al login al cerrar sesión
+            return `${baseUrl}/login`;
         }
         return url.startsWith("/") ? `${baseUrl}${url}` : url;
     },
