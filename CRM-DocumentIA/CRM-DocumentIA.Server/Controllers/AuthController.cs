@@ -79,48 +79,20 @@ namespace CRM_DocumentIA.Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Login([FromBody] LoginDTO dto)
         {
-            Console.WriteLine("🔵 [1] INICIO - Método Login llamado");
             try
             {
-                Console.WriteLine($"🔵 [2] Datos recibidos - Email: {dto?.Email}, Password: {(string.IsNullOrEmpty(dto?.Password) ? "VACÍO" : "PRESENTE")}");
-
-                if (dto == null)
-                {
-                    Console.WriteLine("🔴 [ERROR] dto es null");
-                    return BadRequest(new { success = false, message = "Datos de login inválidos" });
-                }
-
-                Console.WriteLine("🔵 [3] Llamando a _servicioAuth.LoginAsync...");
                 var respuesta = await _servicioAuth.LoginAsync(dto);
-                Console.WriteLine($"🟢 [4] LoginAsync completado - Respuesta: {respuesta}");
-
+                Console.WriteLine("Respuesta de login: ", respuesta);
                 // NextAuth espera un objeto que contenga el token y datos de usuario
-                Console.WriteLine("🟢 [5] ENVIANDO RESPUESTA EXITOSA");
                 return Ok(respuesta);
             }
             catch (UnauthorizedAccessException ex)
             {
-                Console.WriteLine($"🔴 [6A] UnauthorizedAccessException: {ex.Message}");
-                Console.WriteLine($"🔴 StackTrace: {ex.StackTrace}");
                 return Unauthorized(new { success = false, message = ex.Message });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"🔴 [6B] Exception general: {ex.Message}");
-                Console.WriteLine($"🔴 Tipo de excepción: {ex.GetType().Name}");
-                Console.WriteLine($"🔴 StackTrace: {ex.StackTrace}");
-
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine($"🔴 Inner Exception: {ex.InnerException.Message}");
-                    Console.WriteLine($"🔴 Inner StackTrace: {ex.InnerException.StackTrace}");
-                }
-
-                return StatusCode(StatusCodes.Status500InternalServerError, new
-                {
-                    success = false,
-                    message = "Error interno al iniciar sesión."
-                });
+                return StatusCode(StatusCodes.Status500InternalServerError, new { success = false, message = "Error interno al iniciar sesión." });
             }
         }
 
