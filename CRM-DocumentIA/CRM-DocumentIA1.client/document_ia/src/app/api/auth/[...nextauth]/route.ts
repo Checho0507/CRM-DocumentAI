@@ -1,4 +1,4 @@
-// /pages/api/auth/[...nextauth].ts
+// /pages/api/auth/[...nextauth].ts (CORREGIDO: extracción de id/role desde token 2FA)
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -11,7 +11,8 @@ function safeParseJwt(token?: string) {
     if (parts.length !== 3) return null;
     const payload = Buffer.from(parts[1], "base64").toString("utf8");
     return JSON.parse(payload);
-  } catch {
+  } catch (e) {
+    console.error("safeParseJwt error:", e);
     return null;
   }
 }
@@ -35,22 +36,65 @@ const handler = NextAuth({
       },
 
       async authorize(credentials) {
+        console.log("🟡 Authorize() -> credentials recibidas:", credentials);
+
         // FLUJO DE 2FA (cuando ya tienes el token del backend)
         if (credentials?.token) {
+          console.log("🟢 Authorize() -> Login 2FA detectado");
+
+          // Primero intenta tomar id/role desde credentials (si el frontend lo envió)
           let id = credentials.id ?? null;
           let role = credentials.role ?? null;
           let email = credentials.email ?? null;
           let name = credentials.name ?? null;
 
+          // Si no vienen, intentamos decodificar el JWT para extraer claims
           if (!id || !role || !email || !name) {
             const payload = safeParseJwt(credentials.token);
+            console.log("🟢 Authorize() -> Payload decodificado:", payload);
+
             if (payload) {
-              id = id || payload.sub || payload.nameidentifier || payload.nameid || payload.id || payload.userId || payload.user_id || null;
-              email = email || payload.email || payload.upn || null;
-              name = name || payload.name || null;
-              role = role || payload.role || payload.roles || payload.rolNombre || payload.rol || null;
+              // CANDIDATOS PARA ID
+              id =
+                id ||
+                payload.sub ||
+                payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ||
+                payload["nameidentifier"] ||
+                payload.nameid ||
+                payload["id"] ||
+                payload.userId ||
+                payload.user_id ||
+                null;
+
+              // CANDIDATOS PARA EMAIL
+              email =
+                email ||
+                payload.email ||
+                payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] ||
+                payload.upn ||
+                null;
+
+              // CANDIDATOS PARA NAME
+              name =
+                name ||
+                payload.name ||
+                payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] ||
+                null;
+
+              // CANDIDATOS PARA ROLE
+              role =
+                role ||
+                payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ||
+                payload.role ||
+                payload.roles ||
+                payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role"] ||
+                payload.rolNombre ||
+                payload.rol ||
+                null;
             }
           }
+
+          console.log("🟢 Authorize() -> 2FA extraccion final:", { id, email, name, role });
 
           return {
             id: id ? String(id) : undefined,
@@ -73,11 +117,14 @@ const handler = NextAuth({
           });
 
           if (!res.ok) {
+            console.error("❌ Login failed:", res.status, await res.text());
             return null;
           }
 
           const data = await res.json();
+          console.log("🟢 Login backend OK -> data:", data);
 
+          // Normalizamos role con varios fallbacks por si tu backend devuelve distintas formas
           const usuario = data.usuario || {};
           const role =
             (usuario?.rol && (usuario.rol.nombre ?? usuario.rol)) ||
@@ -93,7 +140,8 @@ const handler = NextAuth({
             role: role ?? undefined,
             token: data.token,
           };
-        } catch {
+        } catch (error) {
+          console.error("🚨 Authorize() error:", error);
           return null;
         }
       },
@@ -102,8 +150,11 @@ const handler = NextAuth({
 
   callbacks: {
     async signIn({ user, account }) {
+      console.log("🟡 signIn() -> user:", user, "| account:", account);
+
       // LOGIN SOCIAL GOOGLE
       if (account?.provider === "google") {
+        console.log("🔵 SignIn Google detectado");
         try {
           const res = await fetch(API_ROUTES.SOCIAL_LOGIN, {
             method: "POST",
@@ -115,12 +166,15 @@ const handler = NextAuth({
           });
 
           if (!res.ok) {
+            console.error("❌ Social Login failed:", res.status, await res.text());
             return false;
           }
 
           const data = await res.json();
+          console.log("🟢 Social login data:", data);
 
           const usuario = data.usuario || {};
+          // Normalize role
           const role =
             (usuario?.rol && (usuario.rol.nombre ?? usuario.rol)) ||
             usuario?.rolNombre ||
@@ -128,14 +182,17 @@ const handler = NextAuth({
             data?.rol ||
             null;
 
+          // Update user with backend canonical info — NextAuth will pass this `user` into jwt()
           user.id = String(usuario?.id ?? user.id ?? "");
           user.name = usuario?.nombre ?? user.name;
           user.email = usuario?.email ?? user.email;
           user.role = role ?? user.role;
           user.token = data.token ?? user.token;
 
+          console.log("🟢 signIn() -> user actualizado:", user);
           return true;
-        } catch {
+        } catch (error) {
+          console.error("🚨 Error Google signIn():", error);
           return false;
         }
       }
@@ -144,6 +201,8 @@ const handler = NextAuth({
     },
 
     async jwt({ token, user }) {
+      console.log("🟡 jwt() -> TOKEN ANTES:", token, "| user:", user);
+
       if (user) {
         token.id = user.id ?? token.id;
         token.role = user.role ?? token.role;
@@ -152,10 +211,13 @@ const handler = NextAuth({
         token.accessToken = user.token ?? token.accessToken;
       }
 
+      console.log("🟢 jwt() -> TOKEN DESPUÉS:", token);
       return token;
     },
 
     async session({ session, token }) {
+      console.log("🟡 session() -> token recibido:", token);
+
       session.user = {
         id: token.id,
         email: token.email,
@@ -165,6 +227,7 @@ const handler = NextAuth({
 
       session.accessToken = token.accessToken;
 
+      console.log("🟢 session() -> sesión final:", session);
       return session;
     },
 

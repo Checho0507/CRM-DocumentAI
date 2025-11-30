@@ -1,4 +1,4 @@
-﻿    using System.Text;
+﻿using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -45,6 +45,15 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.EnableSensitiveDataLogging();
 });
 
+// Agregar HttpClient para el servicio RAG
+builder.Services.AddHttpClient<ProcesoIAService>();
+
+// Servicios normales
+builder.Services.AddScoped<DocumentoService>();
+builder.Services.AddScoped<ProcesoIAService>();
+builder.Services.AddScoped<IDocumentoRepository, DocumentoRepository>();
+// ... otros servicios
+
 // Repositorios
 builder.Services.AddScoped<IDocumentoRepository, DocumentoRepository>();
 builder.Services.AddScoped<IProcesoIARepository, ProcesoIARepository>();
@@ -64,7 +73,7 @@ builder.Services.AddScoped<ClienteService>();
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<InsightService>();
 builder.Services.AddScoped<RolService>();
-builder.Services.AddScoped<AutenticacionService>(); // ✅ MOVIDO AQUÍ
+builder.Services.AddScoped<AutenticacionService>();
 builder.Services.AddScoped<InsightsHistoService>();
 
 // 2. Configuración de JWT Bearer (CRUCIAL)

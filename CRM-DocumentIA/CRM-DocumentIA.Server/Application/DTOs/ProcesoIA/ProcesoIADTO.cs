@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace CRM_DocumentIA.Server.Application.DTOs.Documento
+namespace CRM_DocumentIA.Server.Application.DTOs.ProcesoIA
 {
     public class ProcesamientoIADto
     {

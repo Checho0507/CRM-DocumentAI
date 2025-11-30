@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Inteligente - Insights</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --info: #4895ef;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --sidebar-width: 250px;
+            --header-height: 70px;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f7fb;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: var(--transition);
+            z-index: 1000;
+        }
+
+        .logo {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .logo h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+        }
+
+        .logo i {
+            font-size: 24px;
+        }
+
+        .menu {
+            list-style: none;
+            padding: 0;
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            border-left: 4px solid transparent;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left: 4px solid white;
+        }
+
+        .menu-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            transition: var(--transition);
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: white;
+            padding: 15px 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 25px;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background-color: var(--light);
+            border-radius: 30px;
+            padding: 8px 15px;
+            width: 300px;
+        }
+
+        .search-bar input {
+            border: none;
+            background: transparent;
+            padding: 5px 10px;
+            width: 100%;
+            outline: none;
+        }
+
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .notifications {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Dashboard Content */
+        .dashboard-title {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dashboard-title h1 {
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .date-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: white;
+            padding: 8px 15px;
+            border-radius: 30px;
+            box-shadow: var(--box-shadow);
+        }
+
+        /* Insights View */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .insight-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+        }
+
+        .insight-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .insight-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 18px;
+        }
+
+        .insight-risk {
+            background-color: #fde8e8;
+            color: #e02424;
+        }
+
+        .insight-opportunity {
+            background-color: #e7f6ef;
+            color: #0e9f6e;
+        }
+
+        .insight-warning {
+            background-color: #fef5e7;
+            color: #f05e12;
+        }
+
+        .insight-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .insight-desc {
+            font-size: 14px;
+            color: var(--gray);
+            margin-bottom: 15px;
+        }
+
+        .insight-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 70px;
+                padding: 20px 0;
+            }
+            
+            .sidebar .logo h2 span, 
+            .sidebar .menu-item span {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .search-bar {
+                width: 100%;
+            }
+            
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <h2><i class="fas fa-brain"></i> <span>CRM Inteligente</span></h2>
+            </div>
+            <ul class="menu">
+                <li class="menu-item" onclick="window.location.href='home.html'"><i class="fas fa-home"></i> <span>Inicio</span></li>
+                <li class="menu-item" onclick="window.location.href='dashboard.html'"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></li>
+                <li class="menu-item" onclick="window.location.href='documents.html'"><i class="fas fa-file-alt"></i> <span>Documentos</span></li>
+                <li class="menu-item active"><i class="fas fa-lightbulb"></i> <span>Insights</span></li>
+                <li class="menu-item" onclick="window.location.href='analytics.html'"><i class="fas fa-chart-line"></i> <span>Analítica</span></li>
+                <li class="menu-item" onclick="window.location.href='clients.html'"><i class="fas fa-users"></i> <span>Clientes</span></li>
+                <li class="menu-item" onclick="window.location.href='settings.html'"><i class="fas fa-cog"></i> <span>Configuración</span></li>
+                <li class="menu-item" onclick="window.location.href='login.html'"><i class="fas fa-sign-out-alt"></i> <span>Cerrar Sesión</span></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Buscar...">
+                </div>
+                <div class="user-actions">
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </div>
+                    <div class="user-profile">
+                        <div class="avatar">AM</div>
+                        <div>Ana Martínez</div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights View -->
+            <div class="dashboard-title">
+                <h1>Recomendaciones e Insights</h1>
+                <div class="date-filter">
+                    <i class="fas fa-filter"></i>
+                    <span>Filtrar</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+
+            <div class="insights-grid">
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <div class="insight-icon insight-risk">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div>
+                            <div class="insight-title">Cláusula de riesgo detectada</div>
+                            <div class="insight-desc">Contrato: Servicios ABC</div>
+                        </div>
+                    </div>
+                    <p>El contrato contiene una cláusula de terminación unilateral que podría ser perjudicial para tu empresa. Se recomienda revisar y negociar esta cláusula.</p>
+                    <div class="insight-actions">
+                        <button class="btn btn-primary">Ver contrato</button>
+                    </div>
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <div class="insight-icon insight-opportunity">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div>
+                            <div class="insight-title">Oportunidad de upselling</div>
+                            <div class="insight-desc">Cliente: Corporación XYZ</div>
+                        </div>
+                    </div>
+                    <p>Este cliente ha incrementado su uso del servicio en un 35% durante el último trimestre. Es un candidato ideal para una propuesta de expansión de servicios.</p>
+                    <div class="insight-actions">
+                        <button class="btn btn-primary">Crear propuesta</button>
+                    </div>
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <div class="insight-icon insight-warning">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div>
+                            <div class="insight-title">Renovación próxima</div>
+                            <div class="insight-desc">Contrato: Tech Solutions</div>
+                        </div>
+                    </div>
+                    <p>El contrato con Tech Solutions vence en 18 días. Se recomienda iniciar el proceso de renovación con anticipación para evitar interrupciones en el servicio.</p>
+                    <div class="insight-actions">
+                        <button class="btn btn-primary">Programar reunión</button>
+                    </div>
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <div class="insight-icon insight-opportunity">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div>
+                            <div class="insight-title">Posible nueva oportunidad</div>
+                            <div class="insight-desc">Cliente: Global Tech</div>
+                        </div>
+                    </div>
+                    <p>Basado en las últimas comunicaciones, este cliente está mostrando interés en expandir sus servicios contigo. El sentimiento general de las conversaciones es positivo.</p>
+                    <div class="insight-actions">
+                        <button class="btn btn-primary">Contactar</button>
+                    </div>
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <div class="insight-icon insight-risk">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                        <div>
+                            <div class="insight-title">Falta de documentación</div>
+                            <div class="insight-desc">Cliente: Servicios Integrales</div>
+                        </div>
+                    </div>
+                    <p>El acuerdo actual carece de cláusulas importantes sobre propiedad intelectual. Se recomienda actualizar el contrato para incluir estas protecciones.</p>
+                    <div class="insight-actions">
+                        <button class="btn btn-primary">Revisar contrato</button>
+                    </div>
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <div class="insight-icon insight-warning">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div>
+                            <div class="insight-title">Cambio en el tono de comunicación</div>
+                            <div class="insight-desc">Cliente: Empresa ABC</div>
+                        </div>
+                    </div>
+                    <p>Hemos detectado un cambio negativo en el tono de los correos recientes de este cliente. Podría indicar insatisfacción con algún aspecto del servicio.</p>
+                    <div class="insight-actions">
+                        <button class="btn btn-primary">Investigar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

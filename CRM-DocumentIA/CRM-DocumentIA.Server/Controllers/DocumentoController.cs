@@ -2,6 +2,7 @@
 using CRM_DocumentIA.Server.Domain.Entities;
 using CRM_DocumentIA.Server.Application.Services;
 using CRM_DocumentIA.Server.Application.DTOs.Documento;
+using System.Text.Json;
 
 namespace CRM_DocumentIA.Server.Controllers
 {
@@ -38,46 +39,137 @@ namespace CRM_DocumentIA.Server.Controllers
                 if (dto.UsuarioId <= 0)
                     return BadRequest(new { mensaje = "UsuarioId debe ser mayor a 0" });
 
-                _logger.LogInformation($"Iniciando upload de documento: {dto.Archivo.FileName} para usuario: {dto.UsuarioId}");
+                _logger.LogInformation($"📤 Iniciando upload y procesamiento de documento: {dto.Archivo.FileName} para usuario: {dto.UsuarioId}");
 
-                // 1. Subir documento básico
-                var documento = await _documentoService.SubirDocumentoAsync(dto.Archivo, dto.UsuarioId, _environment);
-                _logger.LogInformation($"Documento guardado con ID: {documento.Id}");
+                // 1. Convertir archivo a bytes
+                byte[] archivoBytes;
+                using (var memoryStream = new MemoryStream())
+                {
+                    await dto.Archivo.CopyToAsync(memoryStream);
+                    archivoBytes = memoryStream.ToArray();
+                }
 
-                // 2. Crear ProcesoIA automáticamente
-                var procesoIA = await _procesoIAService.CrearProcesoAnalisisAsync(documento.Id);
-                _logger.LogInformation($"ProcesoIA creado con ID: {procesoIA.Id}");
+                // 2. Procesar documento con servicio IA (esto se hace primero)
+                _logger.LogInformation($"🤖 Enviando documento al servicio IA: {dto.Archivo.FileName}");
+                var resultadoIA = await _procesoIAService.ProcesarDocumentoAsync(archivoBytes, dto.Archivo.FileName);
 
-                // 3. Iniciar procesamiento en segundo plano (no bloqueante)
-                _ = Task.Run(async () => await ProcesarDocumentoCompleto(documento, procesoIA));
+                if (!resultadoIA.Exito)
+                {
+                    _logger.LogError($"❌ Error en procesamiento IA: {resultadoIA.Error}");
+                    return StatusCode(500, new { 
+                        mensaje = "Error en el procesamiento del documento", 
+                        error = resultadoIA.Error 
+                    });
+                }
+
+                _logger.LogInformation($"✅ Procesamiento IA exitoso");
+                _logger.LogInformation($"   - Imágenes: {resultadoIA.NumeroImagenes}");
+                _logger.LogInformation($"   - Tamaño: {resultadoIA.TamañoArchivo} bytes");
+                _logger.LogInformation($"   - Tipo: {resultadoIA.DocType}");
+                _logger.LogInformation($"   - Tiempo: {resultadoIA.TiempoProcesamientoSegundos}s");
+                _logger.LogInformation($"   - Resumen longitud: {resultadoIA.Resumen?.Length ?? 0} caracteres");
+                _logger.LogInformation($"   - Resumen preview: {resultadoIA.Resumen?.Substring(0, Math.Min(100, resultadoIA.Resumen.Length))}...");
+
+                // 3. Guardar archivo físicamente
+                var uploadsFolder = Path.Combine(_environment.ContentRootPath, "Uploads");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = $"{Guid.NewGuid()}_{dto.Archivo.FileName}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+                await System.IO.File.WriteAllBytesAsync(filePath, archivoBytes);
+
+                // 4. Crear Documento ya procesado con TODOS los campos
+                var documento = new Documento
+                {
+                    UsuarioId = dto.UsuarioId,
+                    NombreArchivo = dto.Archivo.FileName,
+                    TipoDocumento = Path.GetExtension(dto.Archivo.FileName),
+                    RutaArchivo = filePath,
+                    FechaSubida = DateTime.UtcNow,
+                    Procesado = true,
+                    ArchivoDocumento = archivoBytes,
+                    TamañoArchivo = resultadoIA.TamañoArchivo > 0 ? resultadoIA.TamañoArchivo : dto.Archivo.Length,
+                    EstadoProcesamiento = "completado",
+                    NumeroImagenes = resultadoIA.NumeroImagenes,
+                    ResumenDocumento = resultadoIA.Resumen, // ✅ Ahora se guarda el resumen correctamente
+                    ArchivoMetadataJson = resultadoIA.MetadataAdicionalJson,
+                    FechaProcesamiento = DateTime.UtcNow,
+                    UrlServicioIA = "http://localhost:8000/ingest"
+                };
+
+                await _documentoService.AgregarAsync(documento);
+                _logger.LogInformation($"💾 Documento guardado con ID: {documento.Id}");
+
+                // 5. Crear ProcesoIA como COMPLETADO con TODOS los campos
+                var procesoIA = new ProcesoIA
+                {
+                    DocumentoId = documento.Id,
+                    TipoProcesamiento = "analisis_documento",
+                    Estado = "completado",
+                    FechaInicio = DateTime.UtcNow.AddSeconds(-resultadoIA.TiempoProcesamientoSegundos),
+                    FechaFin = DateTime.UtcNow,
+                    ResultadoJson = JsonSerializer.Serialize(new
+                    {
+                        numeroImagenes = resultadoIA.NumeroImagenes,
+                        resumen = resultadoIA.Resumen,
+                        metadata = resultadoIA.MetadataAdicionalJson,
+                        documentId = resultadoIA.DocumentId,
+                        docType = resultadoIA.DocType,
+                        tamañoArchivo = resultadoIA.TamañoArchivo,
+                        tiempoProcesamiento = resultadoIA.TiempoProcesamientoSegundos,
+                        fechaProcesamiento = DateTime.UtcNow
+                    }, new JsonSerializerOptions { WriteIndented = true }),
+                    TiempoProcesamientoSegundos = resultadoIA.TiempoProcesamientoSegundos,
+                    UrlServicio = "http://localhost:8000/ingest"
+                };
+
+                await _procesoIAService.AgregarAsync(procesoIA);
+                _logger.LogInformation($"🔗 ProcesoIA creado con ID: {procesoIA.Id}");
+
+                _logger.LogInformation($"🎉 Documento procesado y guardado completamente. ID: {documento.Id}");
 
                 return Ok(new
                 {
-                    mensaje = "Archivo subido correctamente. Procesamiento en curso.",
+                    mensaje = "Documento procesado y guardado correctamente",
                     documentoId = documento.Id,
                     procesoIAId = procesoIA.Id,
                     usuarioId = dto.UsuarioId,
-                    estado = "procesando"
+                    estado = "completado",
+                    numeroImagenes = resultadoIA.NumeroImagenes,
+                    resumen = resultadoIA.Resumen,
+                    docType = resultadoIA.DocType,
+                    documentId = resultadoIA.DocumentId,
+                    tiempoProcesamiento = resultadoIA.TiempoProcesamientoSegundos,
+                    fechaProcesamiento = DateTime.UtcNow
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error en upload de documento: {ex.Message}");
-                return StatusCode(500, new { mensaje = "Error interno al subir el archivo", error = ex.Message });
+                _logger.LogError(ex, $"❌ Error en upload de documento: {ex.Message}");
+                return StatusCode(500, new { 
+                    mensaje = "Error interno al procesar el archivo", 
+                    error = ex.Message 
+                });
             }
         }
 
-        private async Task ProcesarDocumentoCompleto(Documento documento, ProcesoIA procesoIA)
+        // ENDPOINT PARA PROCESAR DOCUMENTOS EXISTENTES PENDIENTES
+        [HttpPost("{id}/procesar")]
+        public async Task<IActionResult> ProcesarDocumentoExistente(int id)
         {
             try
             {
-                _logger.LogInformation($"Iniciando procesamiento completo para documento ID: {documento.Id}");
+                var documento = await _documentoService.ObtenerPorIdAsync(id);
+                if (documento == null)
+                    return NotFound(new { mensaje = "Documento no encontrado" });
 
-                // 1. Actualizar estados a "procesando"
-                await _documentoService.MarcarComoProcesandoAsync(documento.Id);
-                await _procesoIAService.MarcarComoProcesandoAsync(procesoIA.Id);
+                if (documento.EstadoProcesamiento == "completado")
+                    return BadRequest(new { mensaje = "El documento ya está procesado" });
 
-                // 2. Leer archivo para enviar al servicio IA
+                _logger.LogInformation($"🔄 Procesando documento existente ID: {id} - {documento.NombreArchivo}");
+
+                // Obtener bytes del archivo
                 byte[] archivoBytes;
                 if (documento.ArchivoDocumento != null && documento.ArchivoDocumento.Length > 0)
                 {
@@ -89,55 +181,95 @@ namespace CRM_DocumentIA.Server.Controllers
                 }
                 else
                 {
-                    throw new FileNotFoundException("No se pudo encontrar el archivo para procesar");
+                    return NotFound(new { mensaje = "No se pudo encontrar el archivo para procesar" });
                 }
 
-                // 3. Llamar al servicio IA externo usando ProcesoIAService
+                // Procesar con IA
+                _logger.LogInformation($"🤖 Enviando documento existente al servicio IA: {documento.NombreArchivo}");
                 var resultadoIA = await _procesoIAService.ProcesarDocumentoAsync(archivoBytes, documento.NombreArchivo);
 
                 if (resultadoIA.Exito)
                 {
-                    _logger.LogInformation($"Procesamiento IA exitoso para documento ID: {documento.Id}. Imágenes: {resultadoIA.NumeroImagenes}");
+                    _logger.LogInformation($"✅ Procesamiento IA exitoso para documento existente ID: {id}");
+                    _logger.LogInformation($"   - Resumen longitud: {resultadoIA.Resumen?.Length ?? 0} caracteres");
 
-                    // 4. Actualizar documento con resultados del IA
-                    await _documentoService.MarcarComoCompletadoAsync(
-                        documento.Id,
-                        resultadoIA.NumeroImagenes,
-                        resultadoIA.Resumen,
-                        resultadoIA.MetadataAdicionalJson
-                    );
+                    // Actualizar documento con resultados
+                    documento.EstadoProcesamiento = "completado";
+                    documento.Procesado = true;
+                    documento.NumeroImagenes = resultadoIA.NumeroImagenes;
+                    documento.ResumenDocumento = resultadoIA.Resumen; // ✅ Resumen guardado correctamente
+                    documento.ArchivoMetadataJson = resultadoIA.MetadataAdicionalJson;
+                    documento.FechaProcesamiento = DateTime.UtcNow;
+                    documento.UrlServicioIA = "http://localhost:8000/ingest";
 
-                    // 5. Actualizar ProcesoIA como completado
-                    var resultadoJson = System.Text.Json.JsonSerializer.Serialize(new
+                    await _documentoService.ActualizarAsync(documento);
+
+                    // Crear proceso IA completado
+                    var procesoIA = new ProcesoIA
                     {
+                        DocumentoId = documento.Id,
+                        TipoProcesamiento = "analisis_documento",
+                        Estado = "completado",
+                        FechaInicio = DateTime.UtcNow.AddSeconds(-resultadoIA.TiempoProcesamientoSegundos),
+                        FechaFin = DateTime.UtcNow,
+                        ResultadoJson = JsonSerializer.Serialize(new
+                        {
+                            numeroImagenes = resultadoIA.NumeroImagenes,
+                            resumen = resultadoIA.Resumen,
+                            metadata = resultadoIA.MetadataAdicionalJson,
+                            documentId = resultadoIA.DocumentId,
+                            docType = resultadoIA.DocType,
+                            tamañoArchivo = resultadoIA.TamañoArchivo,
+                            tiempoProcesamiento = resultadoIA.TiempoProcesamientoSegundos,
+                            fechaProcesamiento = DateTime.UtcNow
+                        }, new JsonSerializerOptions { WriteIndented = true }),
+                        TiempoProcesamientoSegundos = resultadoIA.TiempoProcesamientoSegundos,
+                        UrlServicio = "http://localhost:8000/ingest"
+                    };
+
+                    await _procesoIAService.AgregarAsync(procesoIA);
+
+                    _logger.LogInformation($"🎉 Documento existente procesado correctamente. ID: {documento.Id}");
+
+                    return Ok(new
+                    {
+                        mensaje = "Documento procesado correctamente",
+                        documentoId = documento.Id,
+                        procesoIAId = procesoIA.Id,
+                        estado = "completado",
                         numeroImagenes = resultadoIA.NumeroImagenes,
                         resumen = resultadoIA.Resumen,
-                        metadata = resultadoIA.MetadataAdicional
+                        tiempoProcesamiento = resultadoIA.TiempoProcesamientoSegundos
                     });
-
-                    await _procesoIAService.MarcarComoCompletadoAsync(procesoIA.Id, resultadoJson);
-
-                    _logger.LogInformation($"Procesamiento completado para documento ID: {documento.Id}");
                 }
                 else
                 {
-                    _logger.LogError($"Error en procesamiento IA para documento ID: {documento.Id}: {resultadoIA.Error}");
+                    _logger.LogError($"❌ Error en procesamiento IA para documento existente ID: {id}: {resultadoIA.Error}");
 
-                    // 6. Manejar error del servicio IA
-                    await _documentoService.MarcarComoErrorAsync(documento.Id, resultadoIA.Error ?? "Error desconocido del servicio IA");
-                    await _procesoIAService.MarcarComoErrorAsync(procesoIA.Id, resultadoIA.Error ?? "Error desconocido del servicio IA");
+                    // Marcar como error
+                    documento.EstadoProcesamiento = "error";
+                    documento.ErrorProcesamiento = resultadoIA.Error;
+                    await _documentoService.ActualizarAsync(documento);
+
+                    return StatusCode(500, new
+                    {
+                        mensaje = "Error en el procesamiento del documento",
+                        error = resultadoIA.Error
+                    });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error en procesamiento completo para documento ID: {documento.Id}: {ex.Message}");
-
-                // 7. Manejar excepciones generales
-                await _documentoService.MarcarComoErrorAsync(documento.Id, ex.Message);
-                await _procesoIAService.MarcarComoErrorAsync(procesoIA.Id, ex.Message);
+                _logger.LogError(ex, $"❌ Error al procesar documento existente {id}");
+                return StatusCode(500, new
+                {
+                    mensaje = "Error al procesar documento",
+                    error = ex.Message
+                });
             }
         }
 
+        // ... (los demás métodos del controller se mantienen igual)
         [HttpGet("usuario/{usuarioId}")]
         public async Task<IActionResult> GetByUsuario(int usuarioId)
         {
@@ -206,6 +338,16 @@ namespace CRM_DocumentIA.Server.Controllers
         {
             try
             {
+                var documento = await _documentoService.ObtenerPorIdAsync(id);
+                if (documento == null)
+                    return NotFound(new { mensaje = "Documento no encontrado" });
+
+                // Eliminar archivo físico si existe
+                if (!string.IsNullOrEmpty(documento.RutaArchivo) && System.IO.File.Exists(documento.RutaArchivo))
+                {
+                    System.IO.File.Delete(documento.RutaArchivo);
+                }
+
                 await _documentoService.EliminarAsync(id);
                 return Ok(new { mensaje = "Documento eliminado correctamente" });
             }
@@ -215,8 +357,6 @@ namespace CRM_DocumentIA.Server.Controllers
                 return StatusCode(500, new { mensaje = "Error al eliminar documento", error = ex.Message });
             }
         }
-
-        // 🔹 ENDPOINTS FALTANTES - Agregados según la documentación inicial
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -267,7 +407,10 @@ namespace CRM_DocumentIA.Server.Controllers
                 if (documento == null)
                     return NotFound(new { mensaje = "Documento no encontrado" });
 
-                await _documentoService.ActualizarEstadoAsync(id, dto.Estado, dto.MensajeError);
+                documento.EstadoProcesamiento = dto.Estado;
+                documento.ErrorProcesamiento = dto.MensajeError;
+                
+                await _documentoService.ActualizarAsync(documento);
                 return Ok(new { mensaje = "Estado actualizado correctamente" });
             }
             catch (Exception ex)
@@ -310,6 +453,10 @@ namespace CRM_DocumentIA.Server.Controllers
                     contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
                 else if (nombreArchivo.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
                     contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                else if (nombreArchivo.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || nombreArchivo.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
+                    contentType = "image/jpeg";
+                else if (nombreArchivo.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                    contentType = "image/png";
 
                 return File(archivoBytes, contentType, nombreArchivo);
             }
@@ -334,10 +481,102 @@ namespace CRM_DocumentIA.Server.Controllers
                 return StatusCode(500, new { mensaje = "Error al obtener estadísticas", error = ex.Message });
             }
         }
+
+        // ENDPOINT PARA OBTENER DOCUMENTOS PENDIENTES DE PROCESAR
+        [HttpGet("pendientes")]
+        public async Task<IActionResult> GetPendientes()
+        {
+            try
+            {
+                var documentos = await _documentoService.ObtenerPorEstadoAsync("pendiente");
+                return Ok(new
+                {
+                    total = documentos.Count(),
+                    documentos = documentos
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener documentos pendientes");
+                return StatusCode(500, new { mensaje = "Error al obtener documentos pendientes", error = ex.Message });
+            }
+        }
+
+        // ENDPOINT PARA PROCESAR TODOS LOS DOCUMENTOS PENDIENTES
+        [HttpPost("procesar-pendientes")]
+        public async Task<IActionResult> ProcesarTodosPendientes()
+        {
+            try
+            {
+                var documentosPendientes = await _documentoService.ObtenerPorEstadoAsync("pendiente");
+                var documentosList = documentosPendientes.ToList();
+
+                if (!documentosList.Any())
+                    return Ok(new { mensaje = "No hay documentos pendientes para procesar" });
+
+                _logger.LogInformation($"Iniciando procesamiento de {documentosList.Count} documentos pendientes");
+
+                var resultados = new List<object>();
+                var procesadosExitosos = 0;
+                var errores = 0;
+
+                foreach (var documento in documentosList)
+                {
+                    try
+                    {
+                        // Usar el endpoint de procesar documento existente
+                        var resultado = await ProcesarDocumentoExistente(documento.Id);
+                        if (resultado is OkObjectResult)
+                        {
+                            procesadosExitosos++;
+                        }
+                        else
+                        {
+                            errores++;
+                        }
+
+                        resultados.Add(new
+                        {
+                            documentoId = documento.Id,
+                            nombre = documento.NombreArchivo,
+                            success = resultado is OkObjectResult
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Error al procesar documento pendiente {documento.Id}");
+                        errores++;
+                        resultados.Add(new
+                        {
+                            documentoId = documento.Id,
+                            nombre = documento.NombreArchivo,
+                            success = false,
+                            error = ex.Message
+                        });
+                    }
+
+                    // Pequeña pausa para no saturar el servicio IA
+                    await Task.Delay(1000);
+                }
+
+                return Ok(new
+                {
+                    mensaje = $"Procesamiento completado. Exitosos: {procesadosExitosos}, Errores: {errores}",
+                    total = documentosList.Count,
+                    exitosos = procesadosExitosos,
+                    errores = errores,
+                    detalles = resultados
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al procesar documentos pendientes");
+                return StatusCode(500, new { mensaje = "Error al procesar documentos pendientes", error = ex.Message });
+            }
+        }
     }
 
-    // 🔹 DTOs para los nuevos endpoints
-
+    // DTOs para los endpoints
     public class ActualizarEstadoDocumentoDto
     {
         public string Estado { get; set; } = string.Empty;
