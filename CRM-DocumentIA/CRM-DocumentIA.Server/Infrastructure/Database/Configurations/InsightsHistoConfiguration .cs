@@ -33,6 +33,12 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database.Configurations
                .WithMany()
                .HasForeignKey(x => x.UserId)
                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(i => i.Chat)
+               .WithMany(c => c.Insights)
+               .HasForeignKey(i => i.ChatId)
+               .OnDelete(DeleteBehavior.Cascade);
+
         }
     }
 }

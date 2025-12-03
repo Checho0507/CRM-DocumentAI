@@ -27,4 +27,9 @@ export const API_ROUTES = {
   UPDATE_DOCUMENT_STATUS: `${BACKEND_BASE_URL}/api/Documento`, // Para: /api/Documento/{id}/estado
   DOWNLOAD_DOCUMENT: `${BACKEND_BASE_URL}/api/Documento`, // Para: /api/Documento/{id}/download
   GET_USER_STATS: `${BACKEND_BASE_URL}/api/Documento/stats/usuario`, // Para: /api/Documento/stats/usuario/{usuarioId}
+
+  ASK_CHATS : `${BACKEND_BASE_URL}/api/Chat/user`,
+  HISTO_CHATS : `${BACKEND_BASE_URL}/api/Chat`,
+  DELETE_CHAT : `${BACKEND_BASE_URL}/api/Chat`,
+  INSIGHT_ASK: `${BACKEND_BASE_URL}/api/InsightsHisto/ask`
 };

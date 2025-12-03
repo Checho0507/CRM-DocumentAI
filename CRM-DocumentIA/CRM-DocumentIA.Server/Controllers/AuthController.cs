@@ -170,6 +170,8 @@ namespace CRM_DocumentIA.Server.Controllers
                 return BadRequest(new { message = "Se ha excedido el número de intentos. Solicita un nuevo código." });
             }
 
+            Console.WriteLine(dto.Codigo+" - " +entry.Code);
+
             if (entry.Code != dto.Codigo)
             {
                 entry.Attempts++;
