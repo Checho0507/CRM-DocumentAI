@@ -1,14 +1,16 @@
-﻿using System.Text;
-using Microsoft.OpenApi.Models;
+﻿using CRM_DocumentIA.Server.Application.Services;
+using CRM_DocumentIA.Server.Domain.Entities;
+using CRM_DocumentIA.Server.Domain.Interfaces;
+using CRM_DocumentIA.Server.Domain.Interfaces.Repositories;
+using CRM_DocumentIA.Server.Infrastructure.Database;
+using CRM_DocumentIA.Server.Infrastructure.Rag;
+using CRM_DocumentIA.Server.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using CRM_DocumentIA.Server.Domain.Entities;
-using CRM_DocumentIA.Server.Domain.Interfaces;
-using CRM_DocumentIA.Server.Application.Services;
-using CRM_DocumentIA.Server.Infrastructure.Database;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using CRM_DocumentIA.Server.Infrastructure.Repositories;
+using Microsoft.OpenApi.Models;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +47,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.EnableSensitiveDataLogging();
 });
 
+// RAG Http Service
+builder.Services.AddHttpClient<IRagClient, RagClient>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8000/"); // Ajusta según tu FastAPI/Docker
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+
 // Agregar HttpClient para el servicio RAG
 builder.Services.AddHttpClient<ProcesoIAService>();
 
@@ -62,6 +72,7 @@ builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IInsightRepository, InsightRepository>();
 builder.Services.AddScoped<IRolRepository, RolRepository>();
 builder.Services.AddScoped<IInsightsHistoRepository, InsightsHistoRepository>();
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
 
 // 🔥 AGREGAR HTTPCLIENT PARA PROCESOIASERVICE
 builder.Services.AddHttpClient<ProcesoIAService>();
@@ -75,6 +86,7 @@ builder.Services.AddScoped<InsightService>();
 builder.Services.AddScoped<RolService>();
 builder.Services.AddScoped<AutenticacionService>();
 builder.Services.AddScoped<InsightsHistoService>();
+builder.Services.AddScoped<ChatService>();
 
 // 2. Configuración de JWT Bearer (CRUCIAL)
 builder.Services.AddAuthentication(options =>

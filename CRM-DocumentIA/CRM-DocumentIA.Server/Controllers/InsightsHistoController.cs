@@ -1,4 +1,5 @@
-﻿using CRM_DocumentIA.Server.Application.DTOs.InsightsHisto;
+﻿using CRM_DocumentIA.Server.Application.Dtos.Rag;
+using CRM_DocumentIA.Server.Application.DTOs.InsightsHisto;
 using CRM_DocumentIA.Server.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -74,5 +75,13 @@ namespace CRM_DocumentIA.Server.Controllers
 
             return Ok("Registro eliminado correctamente.");
         }
+
+        [HttpPost("ask")]
+        public async Task<IActionResult> Ask([FromBody] AskRagDto dto)
+        {
+            var result = await _service.AskRagAndSaveAsync(dto);
+            return Ok(result);
+        }
+
     }
 }
