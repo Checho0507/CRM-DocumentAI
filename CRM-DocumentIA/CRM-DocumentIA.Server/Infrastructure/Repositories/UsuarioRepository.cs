@@ -23,11 +23,10 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
         public async Task<Usuario?> ObtenerPorEmailConRolAsync(string email)
         {
             return await _context.Usuarios
-                .Include(u => u.Id) // 🔥 INCLUIR EL ID
-                .Include(u => u.Rol) // 🔥 INCLUIR EL ROL
-                .Include(u => u.Email)
+                .Include(u => u.Rol) // ✔ único include necesario
                 .FirstOrDefaultAsync(u => u.Email.Value == email);
         }
+
 
         public async Task<Usuario?> ObtenerPorEmailAsync(string email)
         {
@@ -35,12 +34,12 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
             {
                 return await _context.Usuarios.FirstOrDefaultAsync(u => u.Email.Value == email);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
                 return null;
             }
-            
+
         }
 
         public async Task<IEnumerable<Usuario>> ObtenerTodosAsync()
