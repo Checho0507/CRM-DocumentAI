@@ -87,6 +87,7 @@ builder.Services.AddScoped<RolService>();
 builder.Services.AddScoped<AutenticacionService>();
 builder.Services.AddScoped<InsightsHistoService>();
 builder.Services.AddScoped<ChatService>();
+builder.Services.AddScoped<AnalyticsService>();
 
 // 2. Configuración de JWT Bearer (CRUCIAL)
 builder.Services.AddAuthentication(options =>

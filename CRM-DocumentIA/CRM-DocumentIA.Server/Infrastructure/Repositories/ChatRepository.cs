@@ -49,5 +49,10 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
         {
             await _context.SaveChangesAsync();
         }
+
+        public async Task<int> CountAsync()
+        {
+            return await _context.Chats.CountAsync();
+        }
     }
 }

@@ -175,6 +175,8 @@ namespace CRM_DocumentIA.Server.Application.Services
                 var fileContent = new ByteArrayContent(archivoBytes);
                 fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
                 content.Add(fileContent, "file", nombreArchivo);
+                content.Add(new StringContent("openai"), "provider");
+                content.Add(new StringContent("upload"), "source_name");
 
                 var response = await _httpClient.PostAsync(endpoint, content);
                 

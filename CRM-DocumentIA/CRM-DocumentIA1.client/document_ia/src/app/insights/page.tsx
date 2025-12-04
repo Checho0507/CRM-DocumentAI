@@ -48,15 +48,14 @@ export default function InsightsPage() {
   const [chatIdSelected, setChatIdSelected] = useState<number|null>();
 
   const fetchGetChats = async () => {
-    /*if (!session?.user?.id) {
+    if (!session?.user?.id) {
       return;
-    }*/
+    }
 
     try {
       setLoading(true);
       const response = await axios.get<ChatObj[]>(
-        //`${API_ROUTES.ASK_CHATS}/${session.user.id}`
-        `${API_ROUTES.ASK_CHATS}/1`,
+        `${API_ROUTES.ASK_CHATS}/${session.user.id}`,
       );
 
       console.log("📄 Chats cargados desde BD:", response.data);
@@ -76,9 +75,9 @@ export default function InsightsPage() {
   };
 
   const fetchGetHistoInsight = async (chatId:number) => {
-    /*if (!session?.user?.id) {
+    if (!session?.user?.id) {
       return;
-    }*/
+    }
 
     try {
       setLoading(true);
@@ -100,9 +99,9 @@ export default function InsightsPage() {
   };
 
   const fetchDeleteChat = async (chatId:number) => {
-    /*if (!session?.user?.id) {
+    if (!session?.user?.id) {
       return;
-    }*/
+    }
 
     try {
       setLoading(true);
@@ -141,9 +140,9 @@ export default function InsightsPage() {
   
   // 🔹 Cargar documentos cuando la sesión esté disponible
   useEffect(() => {
-    //if (status === "authenticated" && session?.user?.id) {  
+    if (status === "authenticated" && session?.user?.id) {  
       fetchGetChats();
-    //}
+    }
   }, [status, session]); // ✅ Agregué las dependencias correctas
 
 
@@ -175,7 +174,7 @@ export default function InsightsPage() {
     console.log(query);
     try {
 
-      const response = await axios.post(API_ROUTES.INSIGHT_ASK, {query: query,userId:1,chatId:chatIdSelected });
+      const response = await axios.post(API_ROUTES.INSIGHT_ASK, {query: query,userId:session?.user?.id,chatId:chatIdSelected });
 
       console.log("✅ Pregunta Generada:", response.data);
       setQuery("");
