@@ -57,5 +57,59 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
             _context.InsightsHisto.Remove(item);
             return await _context.SaveChangesAsync() > 0;
         }
+
+        public async Task<int> CountAsync()
+        {
+            return await _context.InsightsHisto.CountAsync();
+        }
+
+        public async Task<int> CountDistinctUsersLastDaysAsync(int days)
+        {
+            var dateLimit = DateTime.UtcNow.AddDays(-days);
+
+            return await _context.InsightsHisto
+                .Where(x => x.Date >= dateLimit)
+                .Select(x => x.UserId)
+                .Distinct()
+                .CountAsync();
+        }
+
+        public async Task<IEnumerable<ConsultasPorDiaResult>> GetConsultasGroupedByDayAsync()
+        {
+            return await _context.InsightsHisto
+                .GroupBy(x => x.Date.Date)
+                .Select(g => new ConsultasPorDiaResult
+                {
+                    Fecha = g.Key,
+                    Cantidad = g.Count()
+                })
+                .OrderBy(x => x.Fecha)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<TopUsuariosResult>> GetTopUsersAsync(int top)
+        {
+            return await _context.InsightsHisto
+                .GroupBy(x => x.UserId)
+                .Select(g => new
+                {
+                    UserId = g.Key,
+                    Total = g.Count()
+                })
+                .OrderByDescending(x => x.Total)
+                .Take(top)
+                .Join(
+                    _context.Usuarios,
+                    a => a.UserId,
+                    u => u.Id,
+                    (a, u) => new TopUsuariosResult
+                    {
+                        UserId = u.Id,
+                        Nombre = u.Nombre,
+                        Total = a.Total
+                    }
+                )
+                .ToListAsync();
+        }
     }
 }

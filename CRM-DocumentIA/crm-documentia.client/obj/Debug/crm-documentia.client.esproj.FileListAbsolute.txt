@@ -2,3 +2,4 @@ C:/Users/felipe/Desktop/CRM-DocumentAI/CRM-DocumentIA/crm-documentia.client/obj/
 D:/OTHERS/Universidad/Proyecto Integrador/CRM-DocumentAI/CRM-DocumentIA/crm-documentia.client/obj/Debug/crm-documentia.client.esproj.CoreCompileInputs.cache
 C:/Users/felipe/Desktop/CRM-DocumentAI-1/CRM-DocumentIA/crm-documentia.client/obj/Debug/crm-documentia.client.esproj.CoreCompileInputs.cache
 /home/sergio/Documentos/CRM-DocumentAI/CRM-DocumentIA/crm-documentia.client/obj/Debug/crm-documentia.client.esproj.CoreCompileInputs.cache
+C:\Users\AlejandroGonzales\Documents\Alejo\CRM-DocumentAI\CRM-DocumentIA\crm-documentia.client\obj\Debug\crm-documentia.client.esproj.CoreCompileInputs.cache

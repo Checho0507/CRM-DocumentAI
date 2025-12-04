@@ -9,5 +9,7 @@ namespace CRM_DocumentIA.Server.Domain.Interfaces.Repositories
         Task<IEnumerable<Chat>> GetByUserAsync(int userId);
         Task<bool> DeleteAsync(int id);
         Task SaveChangesAsync();
+
+        Task<int> CountAsync();
     }
 }

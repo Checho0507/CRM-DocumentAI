@@ -124,14 +124,15 @@ namespace CRM_DocumentIA.Server.Application.Services
 
             var ragRequest = new RagRequestDto
             {
-                Query = dto.Query
+                Query = dto.Query,
+                provider = "openai"
             };
 
             var ragResponse = await _ragClient.AskAsync(ragRequest);
 
             var entity = new InsightsHisto
             {
-                UserId = 1,
+                UserId = dto.userId,
                 Question = dto.Query,
                 Answer = ragResponse.Answer,
                 Date = DateTime.Now,

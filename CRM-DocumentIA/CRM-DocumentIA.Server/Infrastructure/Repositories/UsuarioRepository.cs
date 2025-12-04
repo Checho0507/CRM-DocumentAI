@@ -1,10 +1,11 @@
-﻿using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using CRM_DocumentIA.Server.Application.DTOs.Analytics;
 using CRM_DocumentIA.Server.Domain.Entities;
 using CRM_DocumentIA.Server.Domain.Interfaces;
 using CRM_DocumentIA.Server.Infrastructure.Database;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.CodeDom;
+using System.Threading.Tasks;
 
 namespace CRM_DocumentIA.Server.Infrastructure.Repositories
 {
@@ -77,6 +78,22 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
 
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        // Analítica
+
+        public async Task<DateTime?> GetLastActivityDateAsync(int userId)
+        {
+            return await _context.Chats
+                .Where(c => c.UserId == userId)
+                .OrderByDescending(c => c.CreatedAt)
+                .Select(c => (DateTime?)c.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<int> CountAsync()
+        {
+            return await _context.Usuarios.CountAsync();
         }
     }
 }
