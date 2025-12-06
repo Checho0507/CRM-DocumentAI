@@ -44,5 +44,20 @@ namespace CRM_DocumentIA.Server.Controllers
             var data = await _analyticsService.GetTopUsuariosAsync();
             return Ok(data);
         }
+
+        // GET: api/analytics/documentos-por-estado
+        [HttpGet("documentos-por-estado")]
+        public async Task<ActionResult<IEnumerable<DocumentosPorEstadoDto>>> GetDocumentosPorEstado()
+        {
+            var result = await _analyticsService.GetDocumentosPorEstadoAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("documentos-por-tipo")]
+        public async Task<ActionResult<IEnumerable<DocumentosPorEstadoDto>>> GetDocumentosPorTipo()
+        {
+            var result = await _analyticsService.GetDocumentosPorTipoAsync();
+            return Ok(result);
+        }
     }
 }

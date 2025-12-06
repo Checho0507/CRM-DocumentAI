@@ -1,6 +1,7 @@
 ﻿using CRM_DocumentIA.Server.Application.DTOs.Analytics;
 using CRM_DocumentIA.Server.Domain.Interfaces;
 using CRM_DocumentIA.Server.Domain.Interfaces.Repositories;
+using CRM_DocumentIA.Server.Infrastructure.Repositories;
 
 namespace CRM_DocumentIA.Server.Application.Services
 {
@@ -9,15 +10,18 @@ namespace CRM_DocumentIA.Server.Application.Services
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IChatRepository _chatRepository;
         private readonly IInsightsHistoRepository _insightsRepository;
+        private readonly IDocumentoRepository _documentoRepository;
 
         public AnalyticsService(
             IUsuarioRepository usuarioRepository,
             IChatRepository chatRepository,
-            IInsightsHistoRepository insightsRepository)
+            IInsightsHistoRepository insightsRepository,
+            IDocumentoRepository documentoRepository)
         {
             _usuarioRepository = usuarioRepository;
             _chatRepository = chatRepository;
             _insightsRepository = insightsRepository;
+            _documentoRepository = documentoRepository;
         }
 
         public async Task<DashboardSummaryDto> GetSummaryAsync()
@@ -57,6 +61,28 @@ namespace CRM_DocumentIA.Server.Application.Services
                 UserId = x.UserId,
                 Nombre = x.Nombre,
                 TotalConsultas = x.Total
+            });
+        }
+
+        public async Task<IEnumerable<DocumentosPorEstadoDto>> GetDocumentosPorEstadoAsync()
+        {
+            var data = await _documentoRepository.GetDocumentosAgrupadosPorEstadoAsync();
+
+            return data.Select(d => new DocumentosPorEstadoDto
+            {
+                Estado = d.Estado,
+                Cantidad = d.Cantidad
+            });
+        }
+
+        public async Task<IEnumerable<DocumentosPorTipoDto>> GetDocumentosPorTipoAsync()
+        {
+            var data = await _documentoRepository.GetDocumentosAgrupadosPorTipoAsync();
+
+            return data.Select(d => new DocumentosPorTipoDto
+            {
+                Tipo = d.Tipo,
+                Cantidad = d.Cantidad
             });
         }
     }
