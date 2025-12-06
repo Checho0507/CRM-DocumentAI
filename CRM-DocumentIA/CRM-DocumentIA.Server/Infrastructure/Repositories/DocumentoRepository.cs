@@ -62,5 +62,21 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
                 await _context.SaveChangesAsync();
             }
         }
+
+        public async Task<IEnumerable<(string Estado, int Cantidad)>> GetDocumentosAgrupadosPorEstadoAsync()
+        {
+            return await _context.Documentos
+                .GroupBy(d => d.EstadoProcesamiento)
+                .Select(g => new ValueTuple<string, int>(g.Key, g.Count()))
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<(string Tipo, int Cantidad)>> GetDocumentosAgrupadosPorTipoAsync()
+        {
+            return await _context.Documentos
+                .GroupBy(d => d.TipoDocumento)
+                .Select(g => new ValueTuple<string, int>(g.Key, g.Count()))
+                .ToListAsync();
+        }
     }
 }

@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using CRM_DocumentIA.Server.Domain.Entities;
-using CRM_DocumentIA.Server.Application.Services;
+﻿using CRM_DocumentIA.Server.Application.DTOs.Analytics;
 using CRM_DocumentIA.Server.Application.DTOs.Documento;
+using CRM_DocumentIA.Server.Application.Services;
+using CRM_DocumentIA.Server.Domain.Entities;
+using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 
 namespace CRM_DocumentIA.Server.Controllers
@@ -12,17 +13,22 @@ namespace CRM_DocumentIA.Server.Controllers
     {
         private readonly DocumentoService _documentoService;
         private readonly ProcesoIAService _procesoIAService;
+        private readonly AnalyticsService _analyticsService;
+
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<DocumentoController> _logger;
 
         public DocumentoController(
             DocumentoService documentoService,
             ProcesoIAService procesoIAService,
-            IWebHostEnvironment environment,
+            AnalyticsService analyticsService,
+
+        IWebHostEnvironment environment,
             ILogger<DocumentoController> logger)
         {
             _documentoService = documentoService;
             _procesoIAService = procesoIAService;
+            _analyticsService = analyticsService;
             _environment = environment;
             _logger = logger;
         }

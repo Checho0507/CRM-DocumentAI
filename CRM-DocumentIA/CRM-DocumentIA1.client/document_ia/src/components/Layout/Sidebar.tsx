@@ -7,9 +7,6 @@ import {
   FaTachometerAlt,
   FaFileAlt,
   FaLightbulb,
-  FaChartLine,
-  FaUsers,
-  FaCog,
   FaSignOutAlt,
 } from "react-icons/fa";
 import Link from "next/link";
@@ -20,9 +17,6 @@ const menuItems = [
   { icon: <FaTachometerAlt />, label: "Dashboard", href: "/dashboard" },
   { icon: <FaFileAlt />, label: "Documentos", href: "/documents" },
   { icon: <FaLightbulb />, label: "Insights", href: "/insights" },
-  { icon: <FaChartLine />, label: "Analítica", href: "/analytics" },
-  { icon: <FaUsers />, label: "Clientes", href: "/clients" },
-  { icon: <FaCog />, label: "Configuración", href: "/settings" },
   { icon: <FaSignOutAlt />, label: "Cerrar Sesión", href: "/login" },
 ];
 

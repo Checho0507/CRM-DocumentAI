@@ -11,5 +11,8 @@ namespace CRM_DocumentIA.Server.Domain.Interfaces
         Task AgregarAsync(Documento documento);
         Task ActualizarAsync(Documento documento);
         Task EliminarAsync(int id);
+        Task<IEnumerable<(string Estado, int Cantidad)>> GetDocumentosAgrupadosPorEstadoAsync();
+        Task<IEnumerable<(string Tipo, int Cantidad)>> GetDocumentosAgrupadosPorTipoAsync();
+
     }
 }

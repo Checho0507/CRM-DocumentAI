@@ -31,5 +31,12 @@ export const API_ROUTES = {
   ASK_CHATS : `${BACKEND_BASE_URL}/api/Chat/user`,
   HISTO_CHATS : `${BACKEND_BASE_URL}/api/Chat`,
   DELETE_CHAT : `${BACKEND_BASE_URL}/api/Chat`,
-  INSIGHT_ASK: `${BACKEND_BASE_URL}/api/InsightsHisto/ask`
+  INSIGHT_ASK: `${BACKEND_BASE_URL}/api/InsightsHisto/ask`,
+
+  SUMMARY_CHART: `${BACKEND_BASE_URL}/api/Analytics/summary`,
+  QUERY_DAILLY: `${BACKEND_BASE_URL}/api/Analytics/consultas-por-dia`,
+  DOCS_STATUS: `${BACKEND_BASE_URL}/api/Analytics/documentos-por-estado`,
+  DOCS_TYPES: `${BACKEND_BASE_URL}/api/Analytics/documentos-por-tipo`,
+
+  
 };
