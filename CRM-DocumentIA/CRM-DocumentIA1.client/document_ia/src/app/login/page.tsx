@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { API_ROUTES } from "@/lib/apiRoutes";
+import Link from "next/link";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -167,6 +168,18 @@ export default function Login() {
             </svg>
             {isLoading ? "Cargando..." : "Acceder con Google"}
           </button>
+        </div>
+        {/* Enlace al registro */}
+        <div className="text-center mt-6">
+          <p className="text-gray-600 text-sm">
+            ¿No tienes una cuenta?{" "}
+            <Link
+              href="/register"
+              className="text-blue-600 hover:text-blue-800 font-medium"
+            >
+              Regístrate
+            </Link>
+          </p>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ from pydantic import Field
 from pathlib import Path
 
 class Settings(BaseSettings):
+    azure_container: str
 
     # ============================
     # 🔹 APP

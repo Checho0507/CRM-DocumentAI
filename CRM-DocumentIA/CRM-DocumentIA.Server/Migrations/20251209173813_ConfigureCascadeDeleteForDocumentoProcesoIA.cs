@@ -6,11 +6,15 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CRM_DocumentIA.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class AddChatTable : Migration
+    public partial class ConfigureCascadeDeleteForDocumentoProcesoIA : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_ProcesosIA_Documentos_DocumentoId",
+                table: "ProcesosIA");
+
             migrationBuilder.AddColumn<int>(
                 name: "ChatId",
                 table: "insightsHisto",
@@ -33,13 +37,6 @@ namespace CRM_DocumentIA.Server.Migrations
                     table.PrimaryKey("PK_Chats", x => x.Id);
                 });
 
-            migrationBuilder.UpdateData(
-                table: "Roles",
-                keyColumn: "Id",
-                keyValue: 2,
-                column: "Descripcion",
-                value: "Usuario estándar");
-
             migrationBuilder.CreateIndex(
                 name: "IX_insightsHisto_ChatId",
                 table: "insightsHisto",
@@ -52,6 +49,14 @@ namespace CRM_DocumentIA.Server.Migrations
                 principalTable: "Chats",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_ProcesosIA_Documentos_DocumentoId",
+                table: "ProcesosIA",
+                column: "DocumentoId",
+                principalTable: "Documentos",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
         }
 
         /// <inheritdoc />
@@ -60,6 +65,10 @@ namespace CRM_DocumentIA.Server.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_insightsHisto_Chats_ChatId",
                 table: "insightsHisto");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_ProcesosIA_Documentos_DocumentoId",
+                table: "ProcesosIA");
 
             migrationBuilder.DropTable(
                 name: "Chats");
@@ -72,12 +81,13 @@ namespace CRM_DocumentIA.Server.Migrations
                 name: "ChatId",
                 table: "insightsHisto");
 
-            migrationBuilder.UpdateData(
-                table: "Roles",
-                keyColumn: "Id",
-                keyValue: 2,
-                column: "Descripcion",
-                value: "Usuario est�ndar");
+            migrationBuilder.AddForeignKey(
+                name: "FK_ProcesosIA_Documentos_DocumentoId",
+                table: "ProcesosIA",
+                column: "DocumentoId",
+                principalTable: "Documentos",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Restrict);
         }
     }
 }

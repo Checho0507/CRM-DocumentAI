@@ -401,7 +401,7 @@ namespace CRM_DocumentIA.Server.Migrations
                         new
                         {
                             Id = 2,
-                            Descripcion = "Usuario estándar",
+                            Descripcion = "Usuario est�ndar",
                             Nombre = "Usuario"
                         },
                         new
@@ -473,7 +473,7 @@ namespace CRM_DocumentIA.Server.Migrations
                     b.HasOne("CRM_DocumentIA.Server.Domain.Entities.Documento", "Documento")
                         .WithMany("ProcesosIA")
                         .HasForeignKey("DocumentoId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Documento");

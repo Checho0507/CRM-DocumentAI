@@ -42,7 +42,7 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database.Configurations
             builder.HasOne(p => p.Documento)
                 .WithMany(d => d.ProcesosIA)
                 .HasForeignKey(p => p.DocumentoId)
-                .OnDelete(DeleteBehavior.Restrict)  // ← CAMBIADO DE Cascade A Restrict
+                .OnDelete(DeleteBehavior.Cascade)  // ← CAMBIADO DE Cascade A Restrict
                 .IsRequired();
 
             // Índices para mejor performance

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { API_ROUTES } from "@/lib/apiRoutes";
+import Link from "next/link";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -51,25 +52,22 @@ export default function RegisterPage() {
       console.log("🔍 Registration result:", result);
       console.log("🔍 requires2FA value:", result.requires2FA);
 
-
       alert("✅ Registro exitoso");
 
       // 🔥 VERIFICAR EXACTAMENTE QUÉ VALOR TIENE
       const requires2FA = result.requires2FA;
 
       if (requires2FA) {
-
         // Guardar email en localStorage
         localStorage.setItem("pending2faEmail", formData.email);
 
         // Redirigir a la página de verificación 2FA
-        router.push(`/auth/2FA?email=${encodeURIComponent(formData.email)}` as Route);
-
+        router.push(
+          `/auth/2FA?email=${encodeURIComponent(formData.email)}` as Route
+        );
       } else {
-
         router.push("/login" as Route);
       }
-
     } catch (error) {
       console.error("❌ Fetch error:", error);
       setError("❌ Error al conectar con el servidor.");
@@ -129,11 +127,25 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className={`w-full py-2 text-white rounded ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
-            }`}
+          className={`w-full py-2 text-white rounded ${
+            loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
           {loading ? "Registrando..." : "Registrar"}
         </button>
+
+        {/* Enlace al login */}
+        <div className="text-center mt-4">
+          <p className="text-gray-600 text-sm">
+            ¿Ya tienes una cuenta?{" "}
+            <Link
+              href="/login"
+              className="text-blue-600 hover:text-blue-800 font-medium"
+            >
+              Inicia sesión
+            </Link>
+          </p>
+        </div>
       </form>
     </div>
   );
