@@ -61,8 +61,10 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database.Configurations
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
 
-            // Relación con ProcesosIA (ya configurada en ProcesoIAConfiguration)
-            // Relación con Insights (se configurará después)
+            builder.HasMany(d => d.Compartidos)
+                .WithOne(dc => dc.Documento)
+                .HasForeignKey(dc => dc.DocumentoId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

@@ -17,5 +17,7 @@ namespace CRM_DocumentIA.Server.Domain.Interfaces
         Task<bool> AsignarRolAsync(int usuarioId, int rolId);
         Task<DateTime?> GetLastActivityDateAsync(int userId);
         Task<int> CountAsync();
+        // En IUsuarioRepository
+        Task<IEnumerable<Usuario>> BuscarPorNombreOEmailAsync(string busqueda);
     }
 }

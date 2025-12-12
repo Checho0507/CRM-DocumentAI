@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// Domain/Entities/Documento.cs
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CRM_DocumentIA.Server.Domain.Entities;
@@ -53,4 +54,7 @@ public class Documento
 
     public virtual ICollection<ProcesoIA> ProcesosIA { get; set; } = new List<ProcesoIA>();
     public virtual ICollection<Insight> Insights { get; set; } = new List<Insight>();
+    
+    // ✅ NUEVO: Relación con Documentos Compartidos
+    public virtual ICollection<DocumentoCompartido> Compartidos { get; set; } = new List<DocumentoCompartido>();
 }

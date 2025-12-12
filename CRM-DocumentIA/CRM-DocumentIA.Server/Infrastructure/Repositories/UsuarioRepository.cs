@@ -19,7 +19,9 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
         }
 
         public async Task<Usuario?> ObtenerPorIdAsync(int id)
-            => await _context.Usuarios.FindAsync(id);
+            => await _context.Usuarios
+                .Include(u => u.Rol)  // 🔥 Agregué Include para Rol
+                .FirstOrDefaultAsync(u => u.Id == id);
 
         public async Task<Usuario?> ObtenerPorEmailConRolAsync(string email)
         {
@@ -28,23 +30,25 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
                 .FirstOrDefaultAsync(u => u.Email.Value == email);
         }
 
-
         public async Task<Usuario?> ObtenerPorEmailAsync(string email)
         {
             try
             {
-                return await _context.Usuarios.FirstOrDefaultAsync(u => u.Email.Value == email);
+                return await _context.Usuarios
+                    .Include(u => u.Rol)  // 🔥 Agregué Include para consistencia
+                    .FirstOrDefaultAsync(u => u.Email.Value == email);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
                 return null;
             }
-
         }
 
         public async Task<IEnumerable<Usuario>> ObtenerTodosAsync()
-            => await _context.Usuarios.ToListAsync();
+            => await _context.Usuarios
+                .Include(u => u.Rol)  // 🔥 Agregué Include para Rol
+                .ToListAsync();
 
         public async Task AgregarAsync(Usuario usuario)
         {
@@ -75,9 +79,28 @@ namespace CRM_DocumentIA.Server.Infrastructure.Repositories
                 return false;
 
             usuario.RolId = rolId;
-
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        // 🔥 AGREGAR ESTE MÉTODO FALTANTE
+        public async Task<IEnumerable<Usuario>> BuscarPorNombreOEmailAsync(string busqueda)
+        {
+            if (string.IsNullOrWhiteSpace(busqueda))
+                return new List<Usuario>();
+
+            // Convertir a minúsculas para búsqueda case-insensitive
+            var busquedaLower = busqueda.ToLower();
+
+            return await _context.Usuarios
+                .Include(u => u.Rol)
+                .Where(u =>
+                    (u.Nombre != null && u.Nombre.ToLower().Contains(busquedaLower)) ||
+                    (u.Email != null && u.Email.Value != null && u.Email.Value.ToLower().Contains(busquedaLower))
+                )
+                .OrderBy(u => u.Nombre)
+                .Take(20)
+                .ToListAsync();
         }
 
         // Analítica

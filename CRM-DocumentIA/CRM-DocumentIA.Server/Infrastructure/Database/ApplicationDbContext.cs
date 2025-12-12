@@ -22,6 +22,9 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database
         public DbSet<Rol> Roles { get; set; }
         public DbSet<Chat> Chats { get; set; }
         public DbSet<InsightsHisto> InsightsHisto { get; set; } = null!;
+        
+        // 🔥 AGREGAR ESTE NUEVO DbSet PARA DOCUMENTOS COMPARTIDOS
+        public DbSet<DocumentoCompartido> DocumentosCompartidos { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -51,6 +51,16 @@ namespace CRM_DocumentIA.Server.Infrastructure.Database.Configurations
 
             // 6. Mapeo para la tabla Usuarios
             builder.ToTable("Usuarios"); // Nombre explícito de la tabla
-        }
+            
+            builder.HasMany(u => u.DocumentosQueHeCompartido)
+                .WithOne(dc => dc.UsuarioPropietario)
+                .HasForeignKey(dc => dc.UsuarioPropietarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasMany(u => u.DocumentosCompartidosConmigo)
+                .WithOne(dc => dc.UsuarioCompartido)
+                .HasForeignKey(dc => dc.UsuarioCompartidoId)
+                .OnDelete(DeleteBehavior.Restrict);
+                    }
     }
 }
